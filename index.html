@@ -26,7 +26,7 @@ body {
 
 }
 
-/* CONTROLS ABOVE BOARD */
+/* TOP CONTROLS */
 
 .top-controls {
 
@@ -57,6 +57,8 @@ button {
     color:white;
 
 }
+
+/* BOARD */
 
 .board {
 
@@ -98,25 +100,19 @@ button {
 
 }
 
-.controls-bottom {
-
-    margin-top:15px;
-
-    color:white;
-
-    font-size:14px;
-
-}
+/* CENTER FLASH (UPDATED) */
 
 .flash {
 
     position: fixed;
 
-    top: 12%;
+    top: 50%;
 
-    right: 10%;
+    left: 50%;
 
-    font-size: 56px;   /* ~30% larger than 42px */
+    transform: translate(-50%, -50%);
+
+    font-size: 56px;
 
     font-weight: 300;
 
@@ -130,7 +126,7 @@ button {
 
     z-index: 999;
 
-    opacity: 0.9;
+    opacity: 0.95;
 
 }
 
@@ -142,13 +138,23 @@ button {
 
 }
 
+#stats {
+
+    margin-top:10px;
+
+    color:white;
+
+    font-size:13px;
+
+}
+
 </style>
 
 </head>
 
 <body>
 
-<!-- MODE + START CONTROLS ABOVE BOARD -->
+<!-- CONTROLS ABOVE BOARD -->
 
 <div class="top-controls">
 
@@ -162,17 +168,15 @@ button {
 
 <div class="board" id="board"></div>
 
-<div class="controls-bottom">
+<div id="stats">
 
-    <div id="stats">
-
-        Session [0/0] | All Time [0/0]
-
-    </div>
+    Session [0/0] | All Time [0/0]
 
 </div>
 
 <div class="result" id="result"></div>
+
+<!-- CENTERED FLASH -->
 
 <div class="flash" id="flash"></div>
 
