@@ -136,11 +136,15 @@ button {
 
     <button onclick="startTraining()">Start 30s</button>
 
-    <button onclick="toggleMode()">Mode: <span id="modeText">Selected</span></button>
+    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
     <button onclick="resetBoard()">Reset</button>
 
-    <span id="counter">0 / 16</span>
+    <div id="stats">
+
+        Session [0/0] | All Time [0/0]
+
+    </div>
 
 </div>
 
@@ -154,9 +158,9 @@ const board = document.getElementById("board");
 
 const flash = document.getElementById("flash");
 
-const counter = document.getElementById("counter");
-
 const result = document.getElementById("result");
+
+const stats = document.getElementById("stats");
 
 const modeText = document.getElementById("modeText");
 
@@ -166,6 +170,18 @@ const ranks = [8,7,6,5,4,3,2,1];
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
+/* ALL TIME STATS */
+
+let allCorrect = parseInt(localStorage.getItem("allCorrect") || "0");
+
+let allAttempts = parseInt(localStorage.getItem("allAttempts") || "0");
+
+/* SESSION STATS */
+
+let sessionCorrect = 0;
+
+let sessionAttempts = 0;
+
 const max = 16;
 
 let training = false;
@@ -174,19 +190,15 @@ let pool = [];
 
 let currentTarget = null;
 
-let score = 0;
+let timer = null;
 
 let timeLeft = 30;
 
-let timer = null;
-
-/* MODE: selected vs full board */
-
-let mode = "selected"; // or "all"
+let mode = "all";
 
 const squareMap = {};
 
-/* build board */
+/* BUILD BOARD */
 
 for (let r = 0; r < 8; r++) {
 
@@ -220,7 +232,7 @@ for (let r = 0; r < 8; r++) {
 
 }
 
-/* selection + training */
+/* CLICK */
 
 function handleClick(coord) {
 
@@ -248,31 +260,41 @@ function handleClick(coord) {
 
             localStorage.setItem("selected", JSON.stringify(selected));
 
-            updateCounter();
-
         }
 
         return;
 
     }
 
+    /* TRAINING MODE */
+
+    sessionAttempts++;
+
+    allAttempts++;
+
     if (coord === currentTarget) {
 
-        score++;
+        sessionCorrect++;
+
+        allCorrect++;
 
     }
+
+    saveStats();
+
+    updateStats();
 
     nextPrompt();
 
 }
 
-/* MODE SWITCH */
+/* MODE */
 
 function toggleMode() {
 
-    mode = (mode === "selected") ? "all" : "selected";
+    mode = (mode === "all") ? "selected" : "all";
 
-    modeText.textContent = mode === "selected" ? "Selected" : "All 64";
+    modeText.textContent = mode === "all" ? "All 64" : "Selected";
 
 }
 
@@ -282,7 +304,9 @@ function startTraining() {
 
     training = true;
 
-    score = 0;
+    sessionCorrect = 0;
+
+    sessionAttempts = 0;
 
     timeLeft = 30;
 
@@ -338,7 +362,25 @@ function endTraining() {
 
     result.textContent =
 
-        `Time up — Score: ${score}`;
+        `Session ${sessionCorrect}/${sessionAttempts}`;
+
+}
+
+/* STATS */
+
+function updateStats() {
+
+    stats.textContent =
+
+        `Session [${sessionCorrect}/${sessionAttempts}] | All Time [${allCorrect}/${allAttempts}]`;
+
+}
+
+function saveStats() {
+
+    localStorage.setItem("allCorrect", allCorrect);
+
+    localStorage.setItem("allAttempts", allAttempts);
 
 }
 
@@ -348,17 +390,15 @@ function resetBoard() {
 
     localStorage.removeItem("selected");
 
+    localStorage.removeItem("allCorrect");
+
+    localStorage.removeItem("allAttempts");
+
     location.reload();
 
 }
 
-function updateCounter() {
-
-    counter.textContent = `${selected.length} / 16`;
-
-}
-
-updateCounter();
+updateStats();
 
 </script>
 
