@@ -30,8 +30,6 @@ body {
 
 }
 
-/* Header */
-
 .header {
 
     padding: 10px;
@@ -42,8 +40,6 @@ body {
 
 }
 
-/* Board wrapper */
-
 .board-wrapper {
 
     position: relative;
@@ -53,8 +49,6 @@ body {
     max-width: 420px;
 
 }
-
-/* Board */
 
 .board {
 
@@ -70,7 +64,7 @@ body {
 
 }
 
-/* Squares */
+/* squares */
 
 .square {
 
@@ -84,8 +78,6 @@ body {
 
     user-select: none;
 
-    position: relative;
-
 }
 
 .light { background: #f0d9b5; color: black; }
@@ -96,11 +88,35 @@ body {
 
     outline: 3px solid #00e5ff;
 
-    background: #7df9ff !important;
+}
+
+/* suggestion overlay */
+
+.suggestion {
+
+    position: fixed;
+
+    top: 40%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    font-size: 90px;
+
+    font-weight: 800;
+
+    color: #00ffcc;
+
+    text-shadow: 0 0 20px black;
+
+    display: none;
+
+    z-index: 999;
 
 }
 
-/* Labels */
+/* labels */
 
 .files {
 
@@ -108,9 +124,9 @@ body {
 
     grid-template-columns: repeat(8, 1fr);
 
-    text-align: center;
-
     font-size: 12px;
+
+    text-align: center;
 
     color: #aaa;
 
@@ -138,33 +154,7 @@ body {
 
 }
 
-/* Suggestion overlay */
-
-.suggestion {
-
-    position: fixed;
-
-    top: 40%;
-
-    left: 50%;
-
-    transform: translate(-50%, -50%);
-
-    font-size: 80px;
-
-    font-weight: 700;
-
-    color: #00ffcc;
-
-    text-shadow: 0 0 20px black;
-
-    display: none;
-
-    z-index: 999;
-
-}
-
-/* Controls */
+/* controls */
 
 .controls {
 
@@ -183,8 +173,6 @@ body {
     display: flex;
 
     justify-content: space-between;
-
-    gap: 6px;
 
 }
 
@@ -209,8 +197,6 @@ button {
     width: 100%;
 
     text-align: center;
-
-    font-size: 14px;
 
 }
 
@@ -240,27 +226,27 @@ button {
 
     <button onclick="resetBoard()">Reset</button>
 
-    <button onclick="suggest()">Suggest</button>
-
 </div>
 
 <script>
 
 const board = document.getElementById("board");
 
-const counter = document.getElementById("counter");
-
 const suggestion = document.getElementById("suggestion");
+
+const counter = document.getElementById("counter");
 
 const files = ["a","b","c","d","e","f","g","h"];
 
-const ranks = [8,7,6,5,4,3,2,1]; // correct chess orientation
+const ranks = [8,7,6,5,4,3,2,1]; // ensures a1 is bottom-left
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
 const max = 8;
 
-/* Labels */
+let currentTarget = null;
+
+/* labels */
 
 document.getElementById("files").innerHTML =
 
@@ -270,7 +256,7 @@ document.getElementById("ranks").innerHTML =
 
     ranks.map(r => `<div>${r}</div>`).join("");
 
-/* Build board */
+/* build board */
 
 files.forEach((file, col) => {
 
@@ -294,29 +280,7 @@ files.forEach((file, col) => {
 
         }
 
-        square.addEventListener("click", () => {
-
-            if (square.classList.contains("selected")) {
-
-                square.classList.remove("selected");
-
-                selected = selected.filter(s => s !== coord);
-
-            } else {
-
-                if (selected.length >= max) return;
-
-                square.classList.add("selected");
-
-                selected.push(coord);
-
-            }
-
-            localStorage.setItem("selected", JSON.stringify(selected));
-
-            updateCounter();
-
-        });
+        square.addEventListener("click", () => handleClick(square, coord));
 
         board.appendChild(square);
 
@@ -324,15 +288,51 @@ files.forEach((file, col) => {
 
 });
 
-/* Suggest ONE of selected squares */
+/* click logic */
+
+function handleClick(square, coord) {
+
+    // selection mode
+
+    if (!selected.includes(coord)) {
+
+        if (selected.length < max) {
+
+            selected.push(coord);
+
+            square.classList.add("selected");
+
+        }
+
+    } else {
+
+        selected = selected.filter(s => s !== coord);
+
+        square.classList.remove("selected");
+
+    }
+
+    localStorage.setItem("selected", JSON.stringify(selected));
+
+    updateCounter();
+
+    // ALWAYS trigger new suggestion after any tap
+
+    if (selected.length > 0) {
+
+        suggest();
+
+    }
+
+}
+
+/* suggestion system */
 
 function suggest() {
 
-    if (selected.length === 0) return;
+    currentTarget = selected[Math.floor(Math.random() * selected.length)];
 
-    const pick = selected[Math.floor(Math.random() * selected.length)];
-
-    suggestion.textContent = pick;
+    suggestion.textContent = currentTarget;
 
     suggestion.style.display = "block";
 
@@ -344,7 +344,7 @@ function suggest() {
 
 }
 
-/* Reset */
+/* reset */
 
 function resetBoard() {
 
