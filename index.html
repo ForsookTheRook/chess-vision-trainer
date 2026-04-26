@@ -60,6 +60,12 @@ body {
 
 .dark { background:#b58863; }
 
+.selected {
+
+    box-shadow: inset 0 0 0 3px #00e5ff;
+
+}
+
 .controls {
 
     margin-top:15px;
@@ -170,7 +176,11 @@ let timeLeft = 20;
 
 let timer = null;
 
-/* board */
+/* store DOM references so we can toggle highlight reliably */
+
+const squareMap = {};
+
+/* build board */
 
 for (let r = 0; r < 8; r++) {
 
@@ -188,6 +198,16 @@ for (let r = 0; r < 8; r++) {
 
         square.textContent = coord;
 
+        squareMap[coord] = square;
+
+        // RESTORE highlight on load
+
+        if (selected.includes(coord)) {
+
+            square.classList.add("selected");
+
+        }
+
         square.addEventListener("click", () => handleClick(coord));
 
         board.appendChild(square);
@@ -196,13 +216,39 @@ for (let r = 0; r < 8; r++) {
 
 }
 
-/* CLICK HANDLER */
+/* CLICK */
 
 function handleClick(coord) {
 
-    if (!training) return;
+    if (!training) {
 
-    // ANY CLICK advances session
+        if (selected.includes(coord)) {
+
+            selected = selected.filter(s => s !== coord);
+
+            squareMap[coord].classList.remove("selected");
+
+        } else {
+
+            if (selected.length < max) {
+
+                selected.push(coord);
+
+                squareMap[coord].classList.add("selected");
+
+            }
+
+        }
+
+        localStorage.setItem("selected", JSON.stringify(selected));
+
+        updateCounter();
+
+        return;
+
+    }
+
+    // training mode: any click advances
 
     if (coord === currentTarget) {
 
@@ -289,6 +335,14 @@ function resetBoard() {
     location.reload();
 
 }
+
+function updateCounter() {
+
+    counter.textContent = `${selected.length} / 16`;
+
+}
+
+updateCounter();
 
 </script>
 
