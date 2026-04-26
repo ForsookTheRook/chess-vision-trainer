@@ -60,12 +60,6 @@ body {
 
 .dark { background:#b58863; }
 
-.selected {
-
-    box-shadow: inset 0 0 0 3px #00e5ff;
-
-}
-
 .controls {
 
     margin-top:15px;
@@ -116,6 +110,14 @@ button {
 
 }
 
+.result {
+
+    margin-top:10px;
+
+    color:white;
+
+}
+
 </style>
 
 </head>
@@ -126,13 +128,15 @@ button {
 
 <div class="controls">
 
-    <span id="counter">0 / 16</span>
-
-    <button onclick="startTraining()">Start</button>
+    <button onclick="startTraining()">Start 20s</button>
 
     <button onclick="resetBoard()">Reset</button>
 
+    <span id="counter">0 / 16</span>
+
 </div>
+
+<div class="result" id="result"></div>
 
 <div class="flash" id="flash"></div>
 
@@ -140,9 +144,11 @@ button {
 
 const board = document.getElementById("board");
 
+const flash = document.getElementById("flash");
+
 const counter = document.getElementById("counter");
 
-const flash = document.getElementById("flash");
+const result = document.getElementById("result");
 
 const files = ["a","b","c","d","e","f","g","h"];
 
@@ -158,7 +164,13 @@ let pool = [];
 
 let currentTarget = null;
 
-/* build board */
+let score = 0;
+
+let timeLeft = 20;
+
+let timer = null;
+
+/* board */
 
 for (let r = 0; r < 8; r++) {
 
@@ -176,13 +188,7 @@ for (let r = 0; r < 8; r++) {
 
         square.textContent = coord;
 
-        if (selected.includes(coord)) {
-
-            square.classList.add("selected");
-
-        }
-
-        square.addEventListener("click", () => handleClick(square, coord));
+        square.addEventListener("click", () => handleClick(coord));
 
         board.appendChild(square);
 
@@ -190,51 +196,25 @@ for (let r = 0; r < 8; r++) {
 
 }
 
-/* selection + training logic */
+/* CLICK HANDLER */
 
-function handleClick(square, coord) {
+function handleClick(coord) {
 
-    if (!training) {
+    if (!training) return;
 
-        // selection mode
-
-        if (selected.includes(coord)) {
-
-            selected = selected.filter(s => s !== coord);
-
-            square.classList.remove("selected");
-
-        } else {
-
-            if (selected.length < max) {
-
-                selected.push(coord);
-
-                square.classList.add("selected");
-
-            }
-
-        }
-
-        localStorage.setItem("selected", JSON.stringify(selected));
-
-        updateCounter();
-
-        return;
-
-    }
-
-    // TRAINING MODE: wait for correct response
+    // ANY CLICK advances session
 
     if (coord === currentTarget) {
 
-        nextPrompt();
+        score++;
 
     }
 
+    nextPrompt();
+
 }
 
-/* start training */
+/* START */
 
 function startTraining() {
 
@@ -244,11 +224,29 @@ function startTraining() {
 
     pool = [...selected];
 
+    score = 0;
+
+    timeLeft = 20;
+
+    result.textContent = "";
+
     nextPrompt();
+
+    timer = setInterval(() => {
+
+        timeLeft--;
+
+        if (timeLeft <= 0) {
+
+            endTraining();
+
+        }
+
+    }, 1000);
 
 }
 
-/* event-driven loop */
+/* PROMPT */
 
 function nextPrompt() {
 
@@ -262,11 +260,27 @@ function nextPrompt() {
 
         flash.style.display = "none";
 
-    }, 1000);
+    }, 800);
 
 }
 
-/* reset */
+/* END */
+
+function endTraining() {
+
+    clearInterval(timer);
+
+    training = false;
+
+    flash.style.display = "none";
+
+    result.textContent =
+
+        `Time up — Score: ${score}`;
+
+}
+
+/* RESET */
 
 function resetBoard() {
 
@@ -275,14 +289,6 @@ function resetBoard() {
     location.reload();
 
 }
-
-function updateCounter() {
-
-    counter.textContent = `${selected.length} / 16`;
-
-}
-
-updateCounter();
 
 </script>
 
