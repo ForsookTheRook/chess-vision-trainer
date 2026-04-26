@@ -26,6 +26,38 @@ body {
 
 }
 
+/* CONTROLS ABOVE BOARD */
+
+.top-controls {
+
+    margin-top:15px;
+
+    color:white;
+
+    font-size:14px;
+
+    display:flex;
+
+    gap:10px;
+
+    align-items:center;
+
+}
+
+button {
+
+    padding:6px 10px;
+
+    border-radius:6px;
+
+    border:none;
+
+    background:#2c2c2e;
+
+    color:white;
+
+}
+
 .board {
 
     display:grid;
@@ -34,7 +66,7 @@ body {
 
     grid-template-rows: repeat(8, 40px);
 
-    margin-top:20px;
+    margin-top:15px;
 
 }
 
@@ -66,7 +98,7 @@ body {
 
 }
 
-.controls {
+.controls-bottom {
 
     margin-top:15px;
 
@@ -76,33 +108,17 @@ body {
 
 }
 
-button {
-
-    margin-left:10px;
-
-    padding:6px 10px;
-
-    border-radius:6px;
-
-    border:none;
-
-    background:#2c2c2e;
-
-    color:white;
-
-}
-
 .flash {
 
     position: fixed;
 
-    top: 12%;              /* moved to top corner */
+    top: 12%;
 
-    right: 10%;           /* corner positioning */
+    right: 10%;
 
-    font-size: 42px;      /* smaller */
+    font-size: 56px;   /* ~30% larger than 42px */
 
-    font-weight: 300;     /* thinner */
+    font-weight: 300;
 
     letter-spacing: 2px;
 
@@ -126,31 +142,27 @@ button {
 
 }
 
-#stats {
-
-    margin-top:8px;
-
-    color:white;
-
-    font-size:13px;
-
-}
-
 </style>
 
 </head>
 
 <body>
 
-<div class="board" id="board"></div>
+<!-- MODE + START CONTROLS ABOVE BOARD -->
 
-<div class="controls">
+<div class="top-controls">
 
     <button onclick="startTraining()">Start 30s</button>
 
     <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
     <button onclick="resetBoard()">Reset</button>
+
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="controls-bottom">
 
     <div id="stats">
 
@@ -170,11 +182,11 @@ const board = document.getElementById("board");
 
 const flash = document.getElementById("flash");
 
-const result = document.getElementById("result");
-
 const stats = document.getElementById("stats");
 
 const modeText = document.getElementById("modeText");
+
+const result = document.getElementById("result");
 
 const files = ["a","b","c","d","e","f","g","h"];
 
@@ -206,7 +218,7 @@ let mode = "all";
 
 const squareMap = {};
 
-/* build board */
+/* BUILD BOARD */
 
 for (let r = 0; r < 8; r++) {
 
@@ -294,7 +306,7 @@ function handleClick(coord) {
 
 }
 
-/* MODE SWITCH */
+/* MODE */
 
 function toggleMode() {
 
