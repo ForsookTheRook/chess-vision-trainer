@@ -6,7 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Chess Board Test</title>
+<title>Chess Vision Trainer</title>
 
 <style>
 
@@ -18,13 +18,9 @@ body {
 
     display:flex;
 
-    justify-content:center;
+    flex-direction:column;
 
     align-items:center;
-
-    height:100vh;
-
-    flex-direction:column;
 
     font-family: -apple-system, sans-serif;
 
@@ -37,6 +33,8 @@ body {
     grid-template-columns: repeat(8, 40px);
 
     grid-template-rows: repeat(8, 40px);
+
+    margin-top:20px;
 
 }
 
@@ -54,11 +52,45 @@ body {
 
     font-size:10px;
 
+    user-select:none;
+
 }
 
 .light { background:#f0d9b5; }
 
 .dark { background:#b58863; }
+
+.selected {
+
+    box-shadow: inset 0 0 0 3px #00e5ff;
+
+}
+
+.controls {
+
+    margin-top:15px;
+
+    color:white;
+
+    font-size:14px;
+
+}
+
+button {
+
+    margin-left:10px;
+
+    padding:6px 10px;
+
+    border-radius:6px;
+
+    border:none;
+
+    background:#2c2c2e;
+
+    color:white;
+
+}
 
 </style>
 
@@ -68,15 +100,29 @@ body {
 
 <div class="board" id="board"></div>
 
+<div class="controls">
+
+    <span id="counter">0 / 8</span>
+
+    <button onclick="resetBoard()">Reset</button>
+
+</div>
+
 <script>
 
 const board = document.getElementById("board");
+
+const counter = document.getElementById("counter");
 
 const files = ["a","b","c","d","e","f","g","h"];
 
 const ranks = [8,7,6,5,4,3,2,1];
 
-// SIMPLE RENDER ONLY (no logic, no storage, no training)
+let selected = JSON.parse(localStorage.getItem("selected") || "[]");
+
+const max = 8;
+
+/* render board */
 
 for (let r = 0; r < 8; r++) {
 
@@ -88,23 +134,63 @@ for (let r = 0; r < 8; r++) {
 
         square.className = "square";
 
-        if ((r + f) % 2 === 0) {
+        if ((r + f) % 2 === 0) square.classList.add("light");
 
-            square.classList.add("light");
+        else square.classList.add("dark");
 
-        } else {
+        square.textContent = coord;
 
-            square.classList.add("dark");
+        if (selected.includes(coord)) {
+
+            square.classList.add("selected");
 
         }
 
-        square.textContent = coord;
+        square.addEventListener("click", () => {
+
+            if (selected.includes(coord)) {
+
+                selected = selected.filter(s => s !== coord);
+
+                square.classList.remove("selected");
+
+            } else {
+
+                if (selected.length >= max) return;
+
+                selected.push(coord);
+
+                square.classList.add("selected");
+
+            }
+
+            localStorage.setItem("selected", JSON.stringify(selected));
+
+            updateCounter();
+
+        });
 
         board.appendChild(square);
 
     }
 
 }
+
+function updateCounter() {
+
+    counter.textContent = `${selected.length} / 8`;
+
+}
+
+function resetBoard() {
+
+    localStorage.removeItem("selected");
+
+    location.reload();
+
+}
+
+updateCounter();
 
 </script>
 
