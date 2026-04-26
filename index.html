@@ -96,23 +96,25 @@ button {
 
     position: fixed;
 
-    top: 40%;
+    top: 12%;              /* moved to top corner */
 
-    left: 50%;
+    right: 10%;           /* corner positioning */
 
-    transform: translate(-50%, -50%);
+    font-size: 42px;      /* smaller */
 
-    font-size: 100px;
+    font-weight: 300;     /* thinner */
 
-    font-weight: 800;
+    letter-spacing: 2px;
 
     color: #00ffcc;
 
-    text-shadow: 0 0 20px black;
+    text-shadow: 0 0 10px black;
 
     display: none;
 
     z-index: 999;
+
+    opacity: 0.9;
 
 }
 
@@ -121,6 +123,16 @@ button {
     margin-top:10px;
 
     color:white;
+
+}
+
+#stats {
+
+    margin-top:8px;
+
+    color:white;
+
+    font-size:13px;
 
 }
 
@@ -170,13 +182,9 @@ const ranks = [8,7,6,5,4,3,2,1];
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
-/* ALL TIME STATS */
-
 let allCorrect = parseInt(localStorage.getItem("allCorrect") || "0");
 
 let allAttempts = parseInt(localStorage.getItem("allAttempts") || "0");
-
-/* SESSION STATS */
 
 let sessionCorrect = 0;
 
@@ -198,7 +206,7 @@ let mode = "all";
 
 const squareMap = {};
 
-/* BUILD BOARD */
+/* build board */
 
 for (let r = 0; r < 8; r++) {
 
@@ -266,8 +274,6 @@ function handleClick(coord) {
 
     }
 
-    /* TRAINING MODE */
-
     sessionAttempts++;
 
     allAttempts++;
@@ -288,7 +294,7 @@ function handleClick(coord) {
 
 }
 
-/* MODE */
+/* MODE SWITCH */
 
 function toggleMode() {
 
@@ -389,10 +395,6 @@ function saveStats() {
 function resetBoard() {
 
     localStorage.removeItem("selected");
-
-    localStorage.removeItem("allCorrect");
-
-    localStorage.removeItem("allAttempts");
 
     location.reload();
 
