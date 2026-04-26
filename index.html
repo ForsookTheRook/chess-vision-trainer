@@ -134,7 +134,9 @@ button {
 
 <div class="controls">
 
-    <button onclick="startTraining()">Start 20s</button>
+    <button onclick="startTraining()">Start 30s</button>
+
+    <button onclick="toggleMode()">Mode: <span id="modeText">Selected</span></button>
 
     <button onclick="resetBoard()">Reset</button>
 
@@ -156,6 +158,8 @@ const counter = document.getElementById("counter");
 
 const result = document.getElementById("result");
 
+const modeText = document.getElementById("modeText");
+
 const files = ["a","b","c","d","e","f","g","h"];
 
 const ranks = [8,7,6,5,4,3,2,1];
@@ -172,11 +176,13 @@ let currentTarget = null;
 
 let score = 0;
 
-let timeLeft = 20;
+let timeLeft = 30;
 
 let timer = null;
 
-/* store DOM references so we can toggle highlight reliably */
+/* MODE: selected vs full board */
+
+let mode = "selected"; // or "all"
 
 const squareMap = {};
 
@@ -200,8 +206,6 @@ for (let r = 0; r < 8; r++) {
 
         squareMap[coord] = square;
 
-        // RESTORE highlight on load
-
         if (selected.includes(coord)) {
 
             square.classList.add("selected");
@@ -216,39 +220,41 @@ for (let r = 0; r < 8; r++) {
 
 }
 
-/* CLICK */
+/* selection + training */
 
 function handleClick(coord) {
 
     if (!training) {
 
-        if (selected.includes(coord)) {
+        if (mode === "selected") {
 
-            selected = selected.filter(s => s !== coord);
+            if (selected.includes(coord)) {
 
-            squareMap[coord].classList.remove("selected");
+                selected = selected.filter(s => s !== coord);
 
-        } else {
+                squareMap[coord].classList.remove("selected");
 
-            if (selected.length < max) {
+            } else {
 
-                selected.push(coord);
+                if (selected.length < max) {
 
-                squareMap[coord].classList.add("selected");
+                    selected.push(coord);
+
+                    squareMap[coord].classList.add("selected");
+
+                }
 
             }
 
+            localStorage.setItem("selected", JSON.stringify(selected));
+
+            updateCounter();
+
         }
-
-        localStorage.setItem("selected", JSON.stringify(selected));
-
-        updateCounter();
 
         return;
 
     }
-
-    // training mode: any click advances
 
     if (coord === currentTarget) {
 
@@ -260,21 +266,35 @@ function handleClick(coord) {
 
 }
 
+/* MODE SWITCH */
+
+function toggleMode() {
+
+    mode = (mode === "selected") ? "all" : "selected";
+
+    modeText.textContent = mode === "selected" ? "Selected" : "All 64";
+
+}
+
 /* START */
 
 function startTraining() {
 
-    if (selected.length === 0) return;
-
     training = true;
-
-    pool = [...selected];
 
     score = 0;
 
-    timeLeft = 20;
+    timeLeft = 30;
 
     result.textContent = "";
+
+    pool = (mode === "all")
+
+        ? Object.keys(squareMap)
+
+        : [...selected];
+
+    if (pool.length === 0) return;
 
     nextPrompt();
 
@@ -282,11 +302,7 @@ function startTraining() {
 
         timeLeft--;
 
-        if (timeLeft <= 0) {
-
-            endTraining();
-
-        }
+        if (timeLeft <= 0) endTraining();
 
     }, 1000);
 
