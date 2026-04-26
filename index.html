@@ -92,6 +92,32 @@ button {
 
 }
 
+/* FLASH */
+
+.flash {
+
+    position: fixed;
+
+    top: 40%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    font-size: 100px;
+
+    font-weight: 800;
+
+    color: #00ffcc;
+
+    text-shadow: 0 0 20px black;
+
+    display: none;
+
+    z-index: 999;
+
+}
+
 </style>
 
 </head>
@@ -104,9 +130,13 @@ button {
 
     <span id="counter">0 / 16</span>
 
+    <button onclick="startTraining()">Start</button>
+
     <button onclick="resetBoard()">Reset</button>
 
 </div>
+
+<div class="flash" id="flash"></div>
 
 <script>
 
@@ -114,17 +144,23 @@ const board = document.getElementById("board");
 
 const counter = document.getElementById("counter");
 
+const flash = document.getElementById("flash");
+
 const files = ["a","b","c","d","e","f","g","h"];
 
 const ranks = [8,7,6,5,4,3,2,1];
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
-/* CHANGED: 8 → 16 */
-
 const max = 16;
 
-/* render board */
+let training = false;
+
+let pool = [];
+
+let interval = null;
+
+/* build board */
 
 for (let r = 0; r < 8; r++) {
 
@@ -150,6 +186,8 @@ for (let r = 0; r < 8; r++) {
 
         square.addEventListener("click", () => {
 
+            if (training) return; // lock during training
+
             if (selected.includes(coord)) {
 
                 selected = selected.filter(s => s !== coord);
@@ -158,11 +196,13 @@ for (let r = 0; r < 8; r++) {
 
             } else {
 
-                if (selected.length >= max) return;
+                if (selected.length < max) {
 
-                selected.push(coord);
+                    selected.push(coord);
 
-                square.classList.add("selected");
+                    square.classList.add("selected");
+
+                }
 
             }
 
@@ -178,17 +218,55 @@ for (let r = 0; r < 8; r++) {
 
 }
 
-function updateCounter() {
+/* START TRAINING (MANUAL CONTROL) */
 
-    counter.textContent = `${selected.length} / 16`;
+function startTraining() {
+
+    if (selected.length === 0) return;
+
+    training = true;
+
+    pool = [...selected];
+
+    runFlashLoop();
 
 }
+
+function runFlashLoop() {
+
+    clearInterval(interval);
+
+    interval = setInterval(() => {
+
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+
+        flash.textContent = pick;
+
+        flash.style.display = "block";
+
+        setTimeout(() => {
+
+            flash.style.display = "none";
+
+        }, 1000);
+
+    }, 1500);
+
+}
+
+/* RESET */
 
 function resetBoard() {
 
     localStorage.removeItem("selected");
 
     location.reload();
+
+}
+
+function updateCounter() {
+
+    counter.textContent = `${selected.length} / 16`;
 
 }
 
