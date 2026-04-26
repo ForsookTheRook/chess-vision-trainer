@@ -30,15 +30,19 @@ body {
 
 }
 
+/* Header */
+
 .header {
 
-    padding: 12px;
-
-    font-weight: 600;
+    padding: 10px;
 
     font-size: 18px;
 
+    font-weight: 600;
+
 }
+
+/* Board wrapper */
 
 .board-wrapper {
 
@@ -49,6 +53,8 @@ body {
     max-width: 420px;
 
 }
+
+/* Board */
 
 .board {
 
@@ -64,6 +70,8 @@ body {
 
 }
 
+/* Squares */
+
 .square {
 
     display: flex;
@@ -75,6 +83,8 @@ body {
     font-size: 11px;
 
     user-select: none;
+
+    position: relative;
 
 }
 
@@ -90,45 +100,29 @@ body {
 
 }
 
-.target {
+/* Labels */
 
-    box-shadow: inset 0 0 0 4px red;
-
-}
-
-.correct {
-
-    background: #00cc66 !important;
-
-}
-
-.wrong {
-
-    background: #ff4d4d !important;
-
-}
-
-.file-labels {
+.files {
 
     display: grid;
 
     grid-template-columns: repeat(8, 1fr);
 
-    font-size: 12px;
-
-    margin-top: 4px;
-
     text-align: center;
+
+    font-size: 12px;
 
     color: #aaa;
 
+    margin-top: 4px;
+
 }
 
-.rank-labels {
+.ranks {
 
     position: absolute;
 
-    left: -16px;
+    left: -18px;
 
     top: 0;
 
@@ -143,6 +137,34 @@ body {
     color: #aaa;
 
 }
+
+/* Suggestion overlay */
+
+.suggestion {
+
+    position: fixed;
+
+    top: 40%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
+
+    font-size: 80px;
+
+    font-weight: 700;
+
+    color: #00ffcc;
+
+    text-shadow: 0 0 20px black;
+
+    display: none;
+
+    z-index: 999;
+
+}
+
+/* Controls */
 
 .controls {
 
@@ -160,11 +182,9 @@ body {
 
     display: flex;
 
-    flex-wrap: wrap;
+    justify-content: space-between;
 
     gap: 6px;
-
-    justify-content: space-between;
 
 }
 
@@ -204,13 +224,15 @@ button {
 
 <div class="board-wrapper">
 
-    <div class="rank-labels" id="ranks"></div>
+    <div class="ranks" id="ranks"></div>
 
     <div class="board" id="board"></div>
 
 </div>
 
-<div class="file-labels" id="files"></div>
+<div class="files" id="files"></div>
+
+<div class="suggestion" id="suggestion"></div>
 
 <div class="controls">
 
@@ -218,11 +240,7 @@ button {
 
     <button onclick="resetBoard()">Reset</button>
 
-    <button onclick="startTraining(false)">Train All</button>
-
-    <button onclick="startTraining(true)">Train Selected</button>
-
-    <button onclick="stopTraining()">Stop</button>
+    <button onclick="suggest()">Suggest</button>
 
 </div>
 
@@ -232,15 +250,13 @@ const board = document.getElementById("board");
 
 const counter = document.getElementById("counter");
 
+const suggestion = document.getElementById("suggestion");
+
 const files = ["a","b","c","d","e","f","g","h"];
 
-const ranks = [8,7,6,5,4,3,2,1];
+const ranks = [8,7,6,5,4,3,2,1]; // correct chess orientation
 
-let selected = JSON.parse(localStorage.getItem("selectedSquares") || "[]");
-
-let training = false;
-
-let target = null;
+let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
 const max = 8;
 
@@ -256,9 +272,9 @@ document.getElementById("ranks").innerHTML =
 
 /* Build board */
 
-files.forEach((file, colIndex) => {
+files.forEach((file, col) => {
 
-    ranks.forEach((rank, rowIndex) => {
+    ranks.forEach((rank, row) => {
 
         const square = document.createElement("div");
 
@@ -266,15 +282,9 @@ files.forEach((file, colIndex) => {
 
         square.classList.add("square");
 
-        if ((rowIndex + colIndex) % 2 === 0) {
+        if ((row + col) % 2 === 0) square.classList.add("light");
 
-            square.classList.add("light");
-
-        } else {
-
-            square.classList.add("dark");
-
-        }
+        else square.classList.add("dark");
 
         square.textContent = coord;
 
@@ -284,7 +294,29 @@ files.forEach((file, colIndex) => {
 
         }
 
-        square.addEventListener("click", () => handleClick(square, coord));
+        square.addEventListener("click", () => {
+
+            if (square.classList.contains("selected")) {
+
+                square.classList.remove("selected");
+
+                selected = selected.filter(s => s !== coord);
+
+            } else {
+
+                if (selected.length >= max) return;
+
+                square.classList.add("selected");
+
+                selected.push(coord);
+
+            }
+
+            localStorage.setItem("selected", JSON.stringify(selected));
+
+            updateCounter();
+
+        });
 
         board.appendChild(square);
 
@@ -292,117 +324,39 @@ files.forEach((file, colIndex) => {
 
 });
 
-/* Click behavior */
+/* Suggest ONE of selected squares */
 
-function handleClick(square, coord) {
+function suggest() {
 
-    if (training) {
+    if (selected.length === 0) return;
 
-        if (coord === target) {
+    const pick = selected[Math.floor(Math.random() * selected.length)];
 
-            square.classList.add("correct");
+    suggestion.textContent = pick;
 
-            setTimeout(nextTarget, 400);
+    suggestion.style.display = "block";
 
-        } else {
+    setTimeout(() => {
 
-            square.classList.add("wrong");
+        suggestion.style.display = "none";
 
-        }
-
-        return;
-
-    }
-
-    if (square.classList.contains("selected")) {
-
-        square.classList.remove("selected");
-
-        selected = selected.filter(s => s !== coord);
-
-    } else {
-
-        if (selected.length >= max) return;
-
-        square.classList.add("selected");
-
-        selected.push(coord);
-
-    }
-
-    localStorage.setItem("selectedSquares", JSON.stringify(selected));
-
-    updateCounter();
+    }, 1000);
 
 }
 
-/* Training */
+/* Reset */
 
-let trainingPool = [];
+function resetBoard() {
 
-function startTraining(selectedOnly) {
+    localStorage.removeItem("selected");
 
-    training = true;
-
-    trainingPool = selectedOnly && selected.length
-
-        ? [...selected]
-
-        : files.flatMap(f => ranks.map(r => f + r));
-
-    nextTarget();
+    location.reload();
 
 }
-
-function nextTarget() {
-
-    clearMarks();
-
-    target = trainingPool[Math.floor(Math.random() * trainingPool.length)];
-
-    document.querySelectorAll(".square").forEach(sq => {
-
-        if (sq.textContent === target) {
-
-            sq.classList.add("target");
-
-        }
-
-    });
-
-}
-
-function stopTraining() {
-
-    training = false;
-
-    clearMarks();
-
-}
-
-function clearMarks() {
-
-    document.querySelectorAll(".square").forEach(sq => {
-
-        sq.classList.remove("target", "correct", "wrong");
-
-    });
-
-}
-
-/* Other */
 
 function updateCounter() {
 
     counter.textContent = `${selected.length} / 8`;
-
-}
-
-function resetBoard() {
-
-    localStorage.removeItem("selectedSquares");
-
-    location.reload();
 
 }
 
