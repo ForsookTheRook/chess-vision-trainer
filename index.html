@@ -152,6 +152,8 @@ button {
 
     <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
+    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
+
     <button onclick="resetBoard()">Reset</button>
 
 </div>
@@ -182,11 +184,15 @@ const stats = document.getElementById("stats");
 
 const modeText = document.getElementById("modeText");
 
+const viewText = document.getElementById("viewText");
+
 const result = document.getElementById("result");
 
 const files = ["a","b","c","d","e","f","g","h"];
 
 const ranks = [8,7,6,5,4,3,2,1];
+
+let orientation = "white";
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
@@ -210,37 +216,53 @@ let timeLeft = 30;
 
 let mode = "all";
 
-const squareMap = {};
+let squareMap = {};
 
 /* BUILD BOARD */
 
-for (let r = 0; r < 8; r++) {
+function buildBoard() {
 
-    for (let f = 0; f < 8; f++) {
+    board.innerHTML = "";
 
-        const square = document.createElement("div");
+    squareMap = {};
 
-        const coord = files[f] + ranks[r];
+    const fileOrder = (orientation === "white") ? files : [...files].reverse();
 
-        square.className = "square";
+    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
 
-        if ((r + f) % 2 === 0) square.classList.add("light");
+    for (let r = 0; r < 8; r++) {
 
-        else square.classList.add("dark");
+        for (let f = 0; f < 8; f++) {
 
-        square.textContent = coord;
+            const file = fileOrder[f];
 
-        squareMap[coord] = square;
+            const rank = rankOrder[r];
 
-        if (selected.includes(coord)) {
+            const coord = file + rank;
 
-            square.classList.add("selected");
+            const square = document.createElement("div");
+
+            square.className = "square";
+
+            if ((r + f) % 2 === 0) square.classList.add("light");
+
+            else square.classList.add("dark");
+
+            square.textContent = coord;
+
+            squareMap[coord] = square;
+
+            if (selected.includes(coord)) {
+
+                square.classList.add("selected");
+
+            }
+
+            square.addEventListener("click", () => handleClick(coord));
+
+            board.appendChild(square);
 
         }
-
-        square.addEventListener("click", () => handleClick(coord));
-
-        board.appendChild(square);
 
     }
 
@@ -286,8 +308,6 @@ function handleClick(coord) {
 
         sessionCorrect++;
 
-        // IMMEDIATE BEST UPDATE
-
         if (sessionCorrect > bestScore) {
 
             bestScore = sessionCorrect;
@@ -301,6 +321,18 @@ function handleClick(coord) {
     updateStats();
 
     nextPrompt();
+
+}
+
+/* ORIENTATION */
+
+function toggleOrientation() {
+
+    orientation = (orientation === "white") ? "black" : "white";
+
+    viewText.textContent = orientation === "white" ? "White" : "Black";
+
+    buildBoard();
 
 }
 
@@ -403,6 +435,8 @@ function resetBoard() {
     location.reload();
 
 }
+
+buildBoard();
 
 updateStats();
 
