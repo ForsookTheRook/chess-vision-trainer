@@ -66,6 +66,8 @@ button {
 
     margin-top:15px;
 
+    position: relative; /* needed for centering flash */
+
 }
 
 .square {
@@ -108,11 +110,13 @@ button {
 
 .flash {
 
-    position: fixed;
+    position: absolute;
 
-    top: 12%;
+    top: 50%;
 
-    right: 10%;
+    left: 50%;
+
+    transform: translate(-50%, -50%);
 
     font-size: 56px;
 
@@ -129,6 +133,8 @@ button {
     z-index: 999;
 
     opacity: 0.9;
+
+    pointer-events: none;
 
 }
 
@@ -158,7 +164,11 @@ button {
 
 </div>
 
-<div class="board" id="board"></div>
+<div class="board" id="board">
+
+    <div class="flash" id="flash"></div>
+
+</div>
 
 <div class="controls-bottom">
 
@@ -171,8 +181,6 @@ button {
 </div>
 
 <div class="result" id="result"></div>
-
-<div class="flash" id="flash"></div>
 
 <script>
 
@@ -222,7 +230,7 @@ let squareMap = {};
 
 function buildBoard() {
 
-    board.innerHTML = "";
+    board.querySelectorAll(".square").forEach(s => s.remove());
 
     squareMap = {};
 
