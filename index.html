@@ -1,86 +1,116 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
-<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Chess Trainer</title>
+<title>Chess Vision Trainer</title>
 
 <style>
 
-  body {
+body {
 
-    display: flex;
+    margin:0;
 
-    flex-direction: column;
+    background:#111;
 
-    align-items: center;
+    display:flex;
 
-    font-family: Arial, sans-serif;
+    flex-direction:column;
 
-  }
+    align-items:center;
 
-  #controls {
+    font-family: -apple-system, sans-serif;
 
-    margin-bottom: 10px;
+}
 
-    display: flex;
+.top-controls {
 
-    gap: 10px;
+    margin-top:15px;
 
-  }
+    color:white;
 
-  button {
+    font-size:14px;
 
-    padding: 6px 12px;
+    display:flex;
 
-    font-size: 14px;
+    gap:10px;
 
-    cursor: pointer;
+    align-items:center;
 
-  }
+}
 
-  #board {
+button {
 
-    display: grid;
+    padding:6px 10px;
 
-    grid-template-columns: repeat(8, 60px);
+    border-radius:6px;
 
-    grid-template-rows: repeat(8, 60px);
+    border:none;
 
-  }
+    background:#2c2c2e;
 
-  .square {
+    color:white;
 
-    width: 60px;
+}
 
-    height: 60px;
+.board {
+
+    display:grid;
+
+    grid-template-columns: repeat(8, 40px);
+
+    grid-template-rows: repeat(8, 40px);
+
+    margin-top:15px;
 
     position: relative;
 
-  }
+}
 
-  .light { background: #f0d9b5; }
+.square {
 
-  .dark  { background: #b58863; }
+    width:40px;
 
-  /* Centered target marker */
+    height:40px;
 
-  .target::after {
+    display:flex;
 
-    content: "";
+    justify-content:center;
+
+    align-items:center;
+
+    font-size:10px;
+
+    user-select:none;
+
+}
+
+.light { background:#f0d9b5; }
+
+.dark { background:#b58863; }
+
+.selected {
+
+    box-shadow: inset 0 0 0 3px #00e5ff;
+
+}
+
+.controls-bottom {
+
+    margin-top:15px;
+
+    color:white;
+
+    font-size:14px;
+
+}
+
+.flash {
 
     position: absolute;
-
-    width: 18px;
-
-    height: 18px;
-
-    border: 2px solid red;
-
-    border-radius: 4px;
 
     top: 50%;
 
@@ -88,43 +118,33 @@
 
     transform: translate(-50%, -50%);
 
-  }
+    font-size: 56px;
 
-  /* Coordinates */
+    font-weight: 300;
 
-  .coord-file {
+    letter-spacing: 2px;
 
-    position: absolute;
+    color: #00ffcc;
 
-    bottom: 2px;
-
-    right: 4px;
-
-    font-size: 10px;
-
-    opacity: 0.75;
-
-  }
-
-  .coord-rank {
-
-    position: absolute;
-
-    top: 2px;
-
-    left: 4px;
-
-    font-size: 10px;
-
-    opacity: 0.75;
-
-  }
-
-  .hidden {
+    text-shadow: 0 0 10px black;
 
     display: none;
 
-  }
+    z-index: 999;
+
+    opacity: 0.9;
+
+    pointer-events: none;
+
+}
+
+.result {
+
+    margin-top:10px;
+
+    color:white;
+
+}
 
 </style>
 
@@ -132,175 +152,323 @@
 
 <body>
 
-<div id="controls">
+<div class="top-controls">
 
-  <button id="coordsBtn" onclick="toggleCoords()">Show Coordinates</button>
+    <button onclick="startTraining()">Start 30s</button>
 
-  <button id="sideBtn" onclick="toggleSide()">Play as Black</button>
+    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
+
+    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
+
+    <button onclick="toggleCoords()">Coords: <span id="coordsText">On</span></button>
+
+    <button onclick="resetBoard()">Reset</button>
 
 </div>
 
-<div id="board"></div>
+<div class="board" id="board">
+
+    <div class="flash" id="flash"></div>
+
+</div>
+
+<div class="controls-bottom">
+
+    <div id="stats">
+
+        Session [0/0] | Best [0]
+
+    </div>
+
+</div>
+
+<div class="result" id="result"></div>
 
 <script>
 
 const board = document.getElementById("board");
 
-let showCoords = false;
+const flash = document.getElementById("flash");
 
-let playAsBlack = false;
+const stats = document.getElementById("stats");
 
-// Base coordinates
+const modeText = document.getElementById("modeText");
 
-const filesWhite = ["a","b","c","d","e","f","g","h"];
+const viewText = document.getElementById("viewText");
 
-const ranksWhite = [8,7,6,5,4,3,2,1];
+const coordsText = document.getElementById("coordsText");
 
-function getFiles() {
+const result = document.getElementById("result");
 
-  return playAsBlack ? [...filesWhite].reverse() : filesWhite;
+const files = ["a","b","c","d","e","f","g","h"];
 
-}
+const ranks = [8,7,6,5,4,3,2,1];
 
-function getRanks() {
+let orientation = "white";
 
-  return playAsBlack ? [...ranksWhite].reverse() : ranksWhite;
+let showCoords = JSON.parse(localStorage.getItem("showCoords") ?? "true");
 
-}
+let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
-// Random target
+let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
 
-let targetSquare = null;
+let sessionCorrect = 0;
 
-function getRandomSquare() {
+let sessionAttempts = 0;
 
-  return {
+const max = 16;
 
-    f: Math.floor(Math.random() * 8),
+let training = false;
 
-    r: Math.floor(Math.random() * 8)
+let pool = [];
 
-  };
+let currentTarget = null;
 
-}
+let timer = null;
 
-function createBoard() {
+let timeLeft = 30;
 
-  board.innerHTML = "";
+let mode = "all";
 
-  const files = getFiles();
+let squareMap = {};
 
-  const ranks = getRanks();
+/* BUILD BOARD */
 
-  for (let r = 0; r < 8; r++) {
+function buildBoard() {
 
-    for (let f = 0; f < 8; f++) {
+    board.querySelectorAll(".square").forEach(s => s.remove());
 
-      const square = document.createElement("div");
+    squareMap = {};
 
-      square.classList.add("square");
+    const fileOrder = (orientation === "white") ? files : [...files].reverse();
 
-      // Color stays consistent visually
+    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
 
-      if ((r + f) % 2 === 0) {
+    for (let r = 0; r < 8; r++) {
 
-        square.classList.add("light");
+        for (let f = 0; f < 8; f++) {
 
-      } else {
+            const file = fileOrder[f];
 
-        square.classList.add("dark");
+            const rank = rankOrder[r];
 
-      }
+            const coord = file + rank;
 
-      // Map visual square → actual square
+            const square = document.createElement("div");
 
-      let actualF = playAsBlack ? 7 - f : f;
+            square.className = "square";
 
-      let actualR = playAsBlack ? 7 - r : r;
+            if ((r + f) % 2 === 0) square.classList.add("light");
 
-      // Target
+            else square.classList.add("dark");
 
-      if (targetSquare && targetSquare.f === actualF && targetSquare.r === actualR) {
+            square.textContent = showCoords ? coord : "";
 
-        square.classList.add("target");
+            squareMap[coord] = square;
 
-      }
+            if (selected.includes(coord)) {
 
-      const file = files[f];
+                square.classList.add("selected");
 
-      const rank = ranks[r];
+            }
 
-      // File labels
+            square.addEventListener("click", () => handleClick(coord));
 
-      if (r === 7) {
+            board.appendChild(square);
 
-        const fileLabel = document.createElement("div");
-
-        fileLabel.textContent = file;
-
-        fileLabel.classList.add("coord-file");
-
-        if (!showCoords) fileLabel.classList.add("hidden");
-
-        square.appendChild(fileLabel);
-
-      }
-
-      // Rank labels
-
-      if (f === 0) {
-
-        const rankLabel = document.createElement("div");
-
-        rankLabel.textContent = rank;
-
-        rankLabel.classList.add("coord-rank");
-
-        if (!showCoords) rankLabel.classList.add("hidden");
-
-        square.appendChild(rankLabel);
-
-      }
-
-      board.appendChild(square);
+        }
 
     }
 
-  }
+    coordsText.textContent = showCoords ? "On" : "Off";
 
 }
+
+/* CLICK */
+
+function handleClick(coord) {
+
+    if (!training) {
+
+        if (mode === "selected") {
+
+            if (selected.includes(coord)) {
+
+                selected = selected.filter(s => s !== coord);
+
+                squareMap[coord].classList.remove("selected");
+
+            } else {
+
+                if (selected.length < max) {
+
+                    selected.push(coord);
+
+                    squareMap[coord].classList.add("selected");
+
+                }
+
+            }
+
+            localStorage.setItem("selected", JSON.stringify(selected));
+
+        }
+
+        return;
+
+    }
+
+    sessionAttempts++;
+
+    if (coord === currentTarget) {
+
+        sessionCorrect++;
+
+        if (sessionCorrect > bestScore) {
+
+            bestScore = sessionCorrect;
+
+            localStorage.setItem("bestScore", bestScore);
+
+        }
+
+    }
+
+    updateStats();
+
+    nextPrompt();
+
+}
+
+/* TOGGLE COORDS */
 
 function toggleCoords() {
 
-  showCoords = !showCoords;
+    showCoords = !showCoords;
 
-  document.getElementById("coordsBtn").textContent =
+    localStorage.setItem("showCoords", JSON.stringify(showCoords));
 
-    showCoords ? "Hide Coordinates" : "Show Coordinates";
-
-  createBoard();
+    buildBoard();
 
 }
 
-function toggleSide() {
+/* ORIENTATION */
 
-  playAsBlack = !playAsBlack;
+function toggleOrientation() {
 
-  document.getElementById("sideBtn").textContent =
+    orientation = (orientation === "white") ? "black" : "white";
 
-    playAsBlack ? "Play as White" : "Play as Black";
+    viewText.textContent = orientation === "white" ? "White" : "Black";
 
-  createBoard();
+    buildBoard();
 
 }
 
-// Initialize target once
+/* MODE */
 
-targetSquare = getRandomSquare();
+function toggleMode() {
 
-// Initial render
+    mode = (mode === "all") ? "selected" : "all";
 
-createBoard();
+    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+
+}
+
+/* START */
+
+function startTraining() {
+
+    training = true;
+
+    sessionCorrect = 0;
+
+    sessionAttempts = 0;
+
+    timeLeft = 30;
+
+    result.textContent = "";
+
+    pool = (mode === "all")
+
+        ? Object.keys(squareMap)
+
+        : [...selected];
+
+    if (pool.length === 0) return;
+
+    nextPrompt();
+
+    timer = setInterval(() => {
+
+        timeLeft--;
+
+        if (timeLeft <= 0) endTraining();
+
+    }, 1000);
+
+}
+
+/* PROMPT */
+
+function nextPrompt() {
+
+    currentTarget = pool[Math.floor(Math.random() * pool.length)];
+
+    flash.textContent = currentTarget;
+
+    flash.style.display = "block";
+
+    setTimeout(() => {
+
+        flash.style.display = "none";
+
+    }, 800);
+
+}
+
+/* END */
+
+function endTraining() {
+
+    clearInterval(timer);
+
+    training = false;
+
+    flash.style.display = "none";
+
+    result.textContent =
+
+        `Session ${sessionCorrect}/${sessionAttempts}`;
+
+}
+
+/* STATS */
+
+function updateStats() {
+
+    stats.textContent =
+
+        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
+
+}
+
+/* RESET */
+
+function resetBoard() {
+
+    localStorage.removeItem("selected");
+
+    localStorage.removeItem("bestScore");
+
+    localStorage.removeItem("showCoords");
+
+    location.reload();
+
+}
+
+buildBoard();
+
+updateStats();
 
 </script>
 
