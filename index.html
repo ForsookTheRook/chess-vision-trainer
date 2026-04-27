@@ -1,152 +1,120 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
+<meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Chess Vision Trainer</title>
+<title>Chess Coordinate Trainer</title>
 
 <style>
 
-body {
+  body {
 
-    margin:0;
+    font-family: Arial, sans-serif;
 
-    background:#111;
+    display: flex;
 
-    display:flex;
+    flex-direction: column;
 
-    flex-direction:column;
+    align-items: center;
 
-    align-items:center;
+    margin: 0;
 
-    font-family: -apple-system, sans-serif;
+  }
 
-}
+  .controls {
 
-.top-controls {
+    margin: 12px;
 
-    margin-top:15px;
+    display: flex;
 
-    color:white;
-
-    font-size:14px;
-
-    display:flex;
-
-    gap:10px;
-
-    align-items:center;
+    gap: 10px;
 
     flex-wrap: wrap;
 
-}
+    justify-content: center;
 
-button {
+  }
 
-    padding:6px 10px;
+  button {
 
-    border-radius:6px;
+    padding: 8px 12px;
 
-    border:none;
+    font-size: 14px;
 
-    background:#2c2c2e;
+    cursor: pointer;
 
-    color:white;
+    border-radius: 6px;
 
-}
+    border: 1px solid #ccc;
 
-.board {
+    background: #f5f5f5;
 
-    display:grid;
+  }
 
-    grid-template-columns: repeat(8, 40px);
+  button:hover {
 
-    grid-template-rows: repeat(8, 40px);
+    background: #e6e6e6;
 
-    margin-top:15px;
+  }
 
-    position: relative;
+  .board {
 
-}
+    display: grid;
 
-.square {
+    grid-template-columns: repeat(8, 50px);
 
-    width:40px;
+    grid-template-rows: repeat(8, 50px);
 
-    height:40px;
+    border: 2px solid #333;
 
-    display:flex;
+  }
 
-    justify-content:center;
+  .square {
 
-    align-items:center;
+    width: 50px;
 
-    font-size:10px;
+    height: 50px;
 
-    user-select:none;
+    display: flex;
 
-}
+    align-items: center;
 
-.light { background:#f0d9b5; }
+    justify-content: center;
 
-.dark { background:#b58863; }
+    font-size: 12px;
 
-.selected {
+    user-select: none;
 
-    box-shadow: inset 0 0 0 3px #00e5ff;
+  }
 
-}
+  .light { background-color: #f0d9b5; }
 
-.controls-bottom {
+  .dark  { background-color: #b58863; }
 
-    margin-top:15px;
+  .stats {
 
-    color:white;
+    margin-top: 10px;
 
-    font-size:14px;
+    font-size: 16px;
 
-}
+  }
 
-.flash {
+  .info-container {
 
-    position: absolute;
+    margin-top: 12px;
 
-    top: 50%;
+    width: 100%;
 
-    left: 50%;
+    display: flex;
 
-    transform: translate(-50%, -50%);
+    justify-content: center;
 
-    font-size: 56px;
-
-    font-weight: 300;
-
-    letter-spacing: 2px;
-
-    color: #00ffcc;
-
-    text-shadow: 0 0 10px black;
-
-    display: none;
-
-    z-index: 999;
-
-    opacity: 0.9;
-
-    pointer-events: none;
-
-}
-
-.result {
-
-    margin-top:10px;
-
-    color:white;
-
-}
+  }
 
 </style>
 
@@ -154,329 +122,139 @@ button {
 
 <body>
 
-<div class="top-controls">
+<div class="controls">
 
-    <button onclick="startTraining()">Start</button>
+  <button id="modeBtn">Mode: 30s</button>
 
-    <button onclick="stopTraining()">Stop</button>
-
-    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
-
-    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
-
-    <button onclick="toggleCoords()">Coords: <span id="coordsText">On</span></button>
-
-    <button onclick="toggleTimeMode()">Time: <span id="timeText">30s</span></button>
-
-    <button onclick="resetBoard()">Reset</button>
+  <button id="coordBtn">Toggle Coordinates</button>
 
 </div>
 
-<div class="board" id="board">
+<div id="board" class="board"></div>
 
-    <div class="flash" id="flash"></div>
+<div class="stats">
 
-</div>
+  Correct: <span id="correct">0</span> |
 
-<div class="controls-bottom">
-
-    <div id="stats">
-
-        Session [0/0] | Best [0]
-
-    </div>
+  Attempts: <span id="attempts">0</span>
 
 </div>
 
-<div class="result" id="result"></div>
+<div class="info-container">
+
+  <button id="infoBtn">Info</button>
+
+</div>
 
 <script>
 
 const board = document.getElementById("board");
 
-const flash = document.getElementById("flash");
+const correctEl = document.getElementById("correct");
 
-const stats = document.getElementById("stats");
+const attemptsEl = document.getElementById("attempts");
 
-const modeText = document.getElementById("modeText");
+let showCoords = true;
 
-const viewText = document.getElementById("viewText");
+let timedMode = true;
 
-const coordsText = document.getElementById("coordsText");
+let correct = 0;
 
-const timeText = document.getElementById("timeText");
-
-const result = document.getElementById("result");
+let attempts = 0;
 
 const files = ["a","b","c","d","e","f","g","h"];
 
-const ranks = [8,7,6,5,4,3,2,1];
+let targetSquare = "";
 
-let orientation = "white";
+function createBoard() {
 
-let showCoords = JSON.parse(localStorage.getItem("showCoords") ?? "true");
+  board.innerHTML = "";
 
-let timeMode = "30"; // "30" or "unlimited"
+  for (let rank = 8; rank >= 1; rank--) {
 
-let selected = JSON.parse(localStorage.getItem("selected") || "[]");
+    for (let file = 0; file < 8; file++) {
 
-let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
+      const squareName = files[file] + rank;
 
-let sessionCorrect = 0;
+      const square = document.createElement("div");
 
-let sessionAttempts = 0;
+      const isLight = (rank + file) % 2 === 0;
 
-const max = 16;
+      square.className = "square " + (isLight ? "light" : "dark");
 
-let training = false;
+      square.textContent = showCoords ? squareName : "";
 
-let pool = [];
+      square.addEventListener("click", () => handleClick(squareName));
 
-let currentTarget = null;
-
-let timer = null;
-
-let timeLeft = 30;
-
-let mode = "all";
-
-let squareMap = {};
-
-/* BUILD BOARD */
-
-function buildBoard() {
-
-    board.querySelectorAll(".square").forEach(s => s.remove());
-
-    squareMap = {};
-
-    const fileOrder = (orientation === "white") ? files : [...files].reverse();
-
-    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
-
-    for (let r = 0; r < 8; r++) {
-
-        for (let f = 0; f < 8; f++) {
-
-            const coord = fileOrder[f] + rankOrder[r];
-
-            const square = document.createElement("div");
-
-            square.className = "square";
-
-            if ((r + f) % 2 === 0) square.classList.add("light");
-
-            else square.classList.add("dark");
-
-            square.textContent = showCoords ? coord : "";
-
-            squareMap[coord] = square;
-
-            if (selected.includes(coord)) {
-
-                square.classList.add("selected");
-
-            }
-
-            square.addEventListener("click", () => handleClick(coord));
-
-            board.appendChild(square);
-
-        }
+      board.appendChild(square);
 
     }
 
-    coordsText.textContent = showCoords ? "On" : "Off";
+  }
 
 }
 
-/* CLICK */
+function handleClick(squareName) {
 
-function handleClick(coord) {
+  attempts++;
 
-    if (!training) {
+  if (squareName === targetSquare) {
 
-        if (mode === "selected") {
+    correct++;
 
-            if (selected.includes(coord)) {
+  }
 
-                selected = selected.filter(s => s !== coord);
+  updateStats();
 
-                squareMap[coord].classList.remove("selected");
-
-            } else if (selected.length < max) {
-
-                selected.push(coord);
-
-                squareMap[coord].classList.add("selected");
-
-            }
-
-            localStorage.setItem("selected", JSON.stringify(selected));
-
-        }
-
-        return;
-
-    }
-
-    sessionAttempts++;
-
-    if (coord === currentTarget) {
-
-        sessionCorrect++;
-
-        if (sessionCorrect > bestScore) {
-
-            bestScore = sessionCorrect;
-
-            localStorage.setItem("bestScore", bestScore);
-
-        }
-
-    }
-
-    updateStats();
-
-    nextPrompt();
+  pickNewTarget();
 
 }
-
-/* TIME TOGGLE */
-
-function toggleTimeMode() {
-
-    timeMode = (timeMode === "30") ? "unlimited" : "30";
-
-    timeText.textContent = (timeMode === "30") ? "30s" : "Unlimited";
-
-}
-
-/* START */
-
-function startTraining() {
-
-    if (training) return;
-
-    training = true;
-
-    sessionCorrect = 0;
-
-    sessionAttempts = 0;
-
-    result.textContent = "";
-
-    pool = (mode === "all") ? Object.keys(squareMap) : [...selected];
-
-    if (pool.length === 0) return;
-
-    nextPrompt();
-
-    if (timeMode === "30") {
-
-        timeLeft = 30;
-
-        timer = setInterval(() => {
-
-            timeLeft--;
-
-            if (timeLeft <= 0) stopTraining();
-
-        }, 1000);
-
-    }
-
-}
-
-/* STOP */
-
-function stopTraining() {
-
-    clearInterval(timer);
-
-    training = false;
-
-    flash.style.display = "none";
-
-    result.textContent =
-
-        `Session ${sessionCorrect}/${sessionAttempts}`;
-
-}
-
-/* PROMPT */
-
-function nextPrompt() {
-
-    currentTarget = pool[Math.floor(Math.random() * pool.length)];
-
-    flash.textContent = currentTarget;
-
-    flash.style.display = "block";
-
-    setTimeout(() => {
-
-        flash.style.display = "none";
-
-    }, 800);
-
-}
-
-/* MODE */
-
-function toggleMode() {
-
-    mode = (mode === "all") ? "selected" : "all";
-
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
-
-}
-
-/* ORIENTATION */
-
-function toggleOrientation() {
-
-    orientation = (orientation === "white") ? "black" : "white";
-
-    viewText.textContent = orientation === "white" ? "White" : "Black";
-
-    buildBoard();
-
-}
-
-/* COORDS */
-
-function toggleCoords() {
-
-    showCoords = !showCoords;
-
-    localStorage.setItem("showCoords", JSON.stringify(showCoords));
-
-    buildBoard();
-
-}
-
-/* STATS */
 
 function updateStats() {
 
-    stats.textContent =
+  correctEl.textContent = correct;
 
-        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
-
-}
-
-/* RESET */
-
-function resetBoard() {
-
-    localStorage.clear();
-
-    location.reload();
+  attemptsEl.textContent = attempts;
 
 }
 
-buildBoard();
+function pickNewTarget() {
+
+  const file = files[Math.floor(Math.random() * 8)];
+
+  const rank = Math.floor(Math.random() * 8) + 1;
+
+  targetSquare = file + rank;
+
+  document.title = "Find: " + targetSquare;
+
+}
+
+document.getElementById("coordBtn").addEventListener("click", () => {
+
+  showCoords = !showCoords;
+
+  createBoard();
+
+});
+
+document.getElementById("modeBtn").addEventListener("click", (e) => {
+
+  timedMode = !timedMode;
+
+  e.target.textContent = timedMode ? "Mode: 30s" : "Mode: Unlimited";
+
+});
+
+document.getElementById("infoBtn").addEventListener("click", () => {
+
+  window.open("https://github.com/chess-vision-trainer/chess-vision-trainer#readme", "_blank");
+
+});
+
+createBoard();
+
+pickNewTarget();
 
 updateStats();
 
