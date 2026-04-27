@@ -1,150 +1,110 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
 
-<title>Chess Vision Trainer</title>
+<title>Chess Board Trainer</title>
 
 <style>
 
-body {
+  body {
 
-    margin:0;
+    display: flex;
 
-    background:#111;
+    flex-direction: column;
 
-    display:flex;
+    align-items: center;
 
-    flex-direction:column;
+    font-family: Arial, sans-serif;
 
-    align-items:center;
+  }
 
-    font-family: -apple-system, sans-serif;
+  #controls {
 
-}
+    margin-bottom: 10px;
 
-.top-controls {
+  }
 
-    margin-top:15px;
+  #board {
 
-    color:white;
+    display: grid;
 
-    font-size:14px;
+    grid-template-columns: repeat(8, 60px);
 
-    display:flex;
+    grid-template-rows: repeat(8, 60px);
 
-    gap:10px;
+    position: relative;
 
-    align-items:center;
+  }
 
-}
+  .square {
 
-button {
+    width: 60px;
 
-    padding:6px 10px;
+    height: 60px;
 
-    border-radius:6px;
+    display: flex;
 
-    border:none;
+    align-items: center;
 
-    background:#2c2c2e;
+    justify-content: center;
 
-    color:white;
+    font-size: 14px;
 
-}
+    position: relative;
 
-.board {
+  }
 
-    display:grid;
+  .light { background: #f0d9b5; }
 
-    grid-template-columns: repeat(8, 40px);
+  .dark { background: #b58863; }
 
-    grid-template-rows: repeat(8, 40px);
+  /* Suggested square */
 
-    margin-top:15px;
+  .target {
 
-    position: relative; /* needed for centering flash */
+    outline: 3px solid red;
 
-}
+  }
 
-.square {
+  /* Coordinate styles */
 
-    width:40px;
-
-    height:40px;
-
-    display:flex;
-
-    justify-content:center;
-
-    align-items:center;
-
-    font-size:10px;
-
-    user-select:none;
-
-}
-
-.light { background:#f0d9b5; }
-
-.dark { background:#b58863; }
-
-.selected {
-
-    box-shadow: inset 0 0 0 3px #00e5ff;
-
-}
-
-.controls-bottom {
-
-    margin-top:15px;
-
-    color:white;
-
-    font-size:14px;
-
-}
-
-.flash {
+  .coord-file {
 
     position: absolute;
 
-    top: 50%;
+    bottom: 2px;
 
-    left: 50%;
+    right: 4px;
 
-    transform: translate(-50%, -50%);
+    font-size: 10px;
 
-    font-size: 56px;
+    opacity: 0.8;
 
-    font-weight: 300;
+  }
 
-    letter-spacing: 2px;
+  .coord-rank {
 
-    color: #00ffcc;
+    position: absolute;
 
-    text-shadow: 0 0 10px black;
+    top: 2px;
+
+    left: 4px;
+
+    font-size: 10px;
+
+    opacity: 0.8;
+
+  }
+
+  .hidden {
 
     display: none;
 
-    z-index: 999;
-
-    opacity: 0.9;
-
-    pointer-events: none;
-
-}
-
-.result {
-
-    margin-top:10px;
-
-    color:white;
-
-}
+  }
 
 </style>
 
@@ -152,301 +112,111 @@ button {
 
 <body>
 
-<div class="top-controls">
+<div id="controls">
 
-    <button onclick="startTraining()">Start 30s</button>
-
-    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
-
-    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
-
-    <button onclick="resetBoard()">Reset</button>
+  <button onclick="toggleCoords()">Show Coordinates</button>
 
 </div>
 
-<div class="board" id="board">
-
-    <div class="flash" id="flash"></div>
-
-</div>
-
-<div class="controls-bottom">
-
-    <div id="stats">
-
-        Session [0/0] | Best [0]
-
-    </div>
-
-</div>
-
-<div class="result" id="result"></div>
+<div id="board"></div>
 
 <script>
 
 const board = document.getElementById("board");
 
-const flash = document.getElementById("flash");
-
-const stats = document.getElementById("stats");
-
-const modeText = document.getElementById("modeText");
-
-const viewText = document.getElementById("viewText");
-
-const result = document.getElementById("result");
+let showCoords = false;
 
 const files = ["a","b","c","d","e","f","g","h"];
 
 const ranks = [8,7,6,5,4,3,2,1];
 
-let orientation = "white";
+function createBoard() {
 
-let selected = JSON.parse(localStorage.getItem("selected") || "[]");
+  board.innerHTML = "";
 
-let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
+  for (let r = 0; r < 8; r++) {
 
-let sessionCorrect = 0;
+    for (let f = 0; f < 8; f++) {
 
-let sessionAttempts = 0;
+      const square = document.createElement("div");
 
-const max = 16;
+      square.classList.add("square");
 
-let training = false;
+      // Color
 
-let pool = [];
+      if ((r + f) % 2 === 0) {
 
-let currentTarget = null;
+        square.classList.add("light");
 
-let timer = null;
+      } else {
 
-let timeLeft = 30;
+        square.classList.add("dark");
 
-let mode = "all";
+      }
 
-let squareMap = {};
+      // Coordinates
 
-/* BUILD BOARD */
+      const file = files[f];
 
-function buildBoard() {
+      const rank = ranks[r];
 
-    board.querySelectorAll(".square").forEach(s => s.remove());
+      // File label (bottom row only)
 
-    squareMap = {};
+      if (r === 7) {
 
-    const fileOrder = (orientation === "white") ? files : [...files].reverse();
+        const fileLabel = document.createElement("div");
 
-    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
+        fileLabel.textContent = file;
 
-    for (let r = 0; r < 8; r++) {
+        fileLabel.classList.add("coord-file");
 
-        for (let f = 0; f < 8; f++) {
+        if (!showCoords) fileLabel.classList.add("hidden");
 
-            const file = fileOrder[f];
+        square.appendChild(fileLabel);
 
-            const rank = rankOrder[r];
+      }
 
-            const coord = file + rank;
+      // Rank label (left column only)
 
-            const square = document.createElement("div");
+      if (f === 0) {
 
-            square.className = "square";
+        const rankLabel = document.createElement("div");
 
-            if ((r + f) % 2 === 0) square.classList.add("light");
+        rankLabel.textContent = rank;
 
-            else square.classList.add("dark");
+        rankLabel.classList.add("coord-rank");
 
-            square.textContent = coord;
+        if (!showCoords) rankLabel.classList.add("hidden");
 
-            squareMap[coord] = square;
+        square.appendChild(rankLabel);
 
-            if (selected.includes(coord)) {
+      }
 
-                square.classList.add("selected");
-
-            }
-
-            square.addEventListener("click", () => handleClick(coord));
-
-            board.appendChild(square);
-
-        }
+      board.appendChild(square);
 
     }
 
-}
-
-/* CLICK */
-
-function handleClick(coord) {
-
-    if (!training) {
-
-        if (mode === "selected") {
-
-            if (selected.includes(coord)) {
-
-                selected = selected.filter(s => s !== coord);
-
-                squareMap[coord].classList.remove("selected");
-
-            } else {
-
-                if (selected.length < max) {
-
-                    selected.push(coord);
-
-                    squareMap[coord].classList.add("selected");
-
-                }
-
-            }
-
-            localStorage.setItem("selected", JSON.stringify(selected));
-
-        }
-
-        return;
-
-    }
-
-    sessionAttempts++;
-
-    if (coord === currentTarget) {
-
-        sessionCorrect++;
-
-        if (sessionCorrect > bestScore) {
-
-            bestScore = sessionCorrect;
-
-            localStorage.setItem("bestScore", bestScore);
-
-        }
-
-    }
-
-    updateStats();
-
-    nextPrompt();
+  }
 
 }
 
-/* ORIENTATION */
+function toggleCoords() {
 
-function toggleOrientation() {
+  showCoords = !showCoords;
 
-    orientation = (orientation === "white") ? "black" : "white";
+  // Update button text
 
-    viewText.textContent = orientation === "white" ? "White" : "Black";
+  const btn = document.querySelector("button");
 
-    buildBoard();
+  btn.textContent = showCoords ? "Hide Coordinates" : "Show Coordinates";
 
-}
-
-/* MODE */
-
-function toggleMode() {
-
-    mode = (mode === "all") ? "selected" : "all";
-
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+  createBoard();
 
 }
 
-/* START */
+// Initial render
 
-function startTraining() {
-
-    training = true;
-
-    sessionCorrect = 0;
-
-    sessionAttempts = 0;
-
-    timeLeft = 30;
-
-    result.textContent = "";
-
-    pool = (mode === "all")
-
-        ? Object.keys(squareMap)
-
-        : [...selected];
-
-    if (pool.length === 0) return;
-
-    nextPrompt();
-
-    timer = setInterval(() => {
-
-        timeLeft--;
-
-        if (timeLeft <= 0) endTraining();
-
-    }, 1000);
-
-}
-
-/* PROMPT */
-
-function nextPrompt() {
-
-    currentTarget = pool[Math.floor(Math.random() * pool.length)];
-
-    flash.textContent = currentTarget;
-
-    flash.style.display = "block";
-
-    setTimeout(() => {
-
-        flash.style.display = "none";
-
-    }, 800);
-
-}
-
-/* END */
-
-function endTraining() {
-
-    clearInterval(timer);
-
-    training = false;
-
-    flash.style.display = "none";
-
-    result.textContent =
-
-        `Session ${sessionCorrect}/${sessionAttempts}`;
-
-}
-
-/* STATS */
-
-function updateStats() {
-
-    stats.textContent =
-
-        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
-
-}
-
-/* RESET */
-
-function resetBoard() {
-
-    localStorage.removeItem("selected");
-
-    localStorage.removeItem("bestScore");
-
-    location.reload();
-
-}
-
-buildBoard();
-
-updateStats();
+createBoard();
 
 </script>
 
