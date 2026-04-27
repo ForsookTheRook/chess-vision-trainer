@@ -6,7 +6,7 @@
 
 <meta charset="UTF-8">
 
-<title>Chess Board Trainer</title>
+<title>Chess Trainer</title>
 
 <style>
 
@@ -26,6 +26,20 @@
 
     margin-bottom: 10px;
 
+    display: flex;
+
+    gap: 10px;
+
+  }
+
+  button {
+
+    padding: 6px 12px;
+
+    font-size: 14px;
+
+    cursor: pointer;
+
   }
 
   #board {
@@ -36,8 +50,6 @@
 
     grid-template-rows: repeat(8, 60px);
 
-    position: relative;
-
   }
 
   .square {
@@ -46,31 +58,39 @@
 
     height: 60px;
 
-    display: flex;
-
-    align-items: center;
-
-    justify-content: center;
-
-    font-size: 14px;
-
     position: relative;
 
   }
 
   .light { background: #f0d9b5; }
 
-  .dark { background: #b58863; }
+  .dark  { background: #b58863; }
 
-  /* Suggested square */
+  /* Centered target marker */
 
-  .target {
+  .target::after {
 
-    outline: 3px solid red;
+    content: "";
+
+    position: absolute;
+
+    width: 18px;
+
+    height: 18px;
+
+    border: 2px solid red;
+
+    border-radius: 4px;
+
+    top: 50%;
+
+    left: 50%;
+
+    transform: translate(-50%, -50%);
 
   }
 
-  /* Coordinate styles */
+  /* Coordinates */
 
   .coord-file {
 
@@ -82,7 +102,7 @@
 
     font-size: 10px;
 
-    opacity: 0.8;
+    opacity: 0.75;
 
   }
 
@@ -96,7 +116,7 @@
 
     font-size: 10px;
 
-    opacity: 0.8;
+    opacity: 0.75;
 
   }
 
@@ -114,7 +134,9 @@
 
 <div id="controls">
 
-  <button onclick="toggleCoords()">Show Coordinates</button>
+  <button id="coordsBtn" onclick="toggleCoords()">Show Coordinates</button>
+
+  <button id="sideBtn" onclick="toggleSide()">Play as Black</button>
 
 </div>
 
@@ -126,13 +148,49 @@ const board = document.getElementById("board");
 
 let showCoords = false;
 
-const files = ["a","b","c","d","e","f","g","h"];
+let playAsBlack = false;
 
-const ranks = [8,7,6,5,4,3,2,1];
+// Base coordinates
+
+const filesWhite = ["a","b","c","d","e","f","g","h"];
+
+const ranksWhite = [8,7,6,5,4,3,2,1];
+
+function getFiles() {
+
+  return playAsBlack ? [...filesWhite].reverse() : filesWhite;
+
+}
+
+function getRanks() {
+
+  return playAsBlack ? [...ranksWhite].reverse() : ranksWhite;
+
+}
+
+// Random target
+
+let targetSquare = null;
+
+function getRandomSquare() {
+
+  return {
+
+    f: Math.floor(Math.random() * 8),
+
+    r: Math.floor(Math.random() * 8)
+
+  };
+
+}
 
 function createBoard() {
 
   board.innerHTML = "";
+
+  const files = getFiles();
+
+  const ranks = getRanks();
 
   for (let r = 0; r < 8; r++) {
 
@@ -142,7 +200,7 @@ function createBoard() {
 
       square.classList.add("square");
 
-      // Color
+      // Color stays consistent visually
 
       if ((r + f) % 2 === 0) {
 
@@ -154,13 +212,25 @@ function createBoard() {
 
       }
 
-      // Coordinates
+      // Map visual square → actual square
+
+      let actualF = playAsBlack ? 7 - f : f;
+
+      let actualR = playAsBlack ? 7 - r : r;
+
+      // Target
+
+      if (targetSquare && targetSquare.f === actualF && targetSquare.r === actualR) {
+
+        square.classList.add("target");
+
+      }
 
       const file = files[f];
 
       const rank = ranks[r];
 
-      // File label (bottom row only)
+      // File labels
 
       if (r === 7) {
 
@@ -176,7 +246,7 @@ function createBoard() {
 
       }
 
-      // Rank label (left column only)
+      // Rank labels
 
       if (f === 0) {
 
@@ -204,15 +274,29 @@ function toggleCoords() {
 
   showCoords = !showCoords;
 
-  // Update button text
+  document.getElementById("coordsBtn").textContent =
 
-  const btn = document.querySelector("button");
-
-  btn.textContent = showCoords ? "Hide Coordinates" : "Show Coordinates";
+    showCoords ? "Hide Coordinates" : "Show Coordinates";
 
   createBoard();
 
 }
+
+function toggleSide() {
+
+  playAsBlack = !playAsBlack;
+
+  document.getElementById("sideBtn").textContent =
+
+    playAsBlack ? "Play as White" : "Play as Black";
+
+  createBoard();
+
+}
+
+// Initialize target once
+
+targetSquare = getRandomSquare();
 
 // Initial render
 
