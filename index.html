@@ -40,6 +40,8 @@ body {
 
     align-items:center;
 
+    flex-wrap: wrap;
+
 }
 
 button {
@@ -154,13 +156,15 @@ button {
 
 <div class="top-controls">
 
-    <button onclick="startTraining()">Start 30s</button>
+    <button id="startBtn" onclick="startStop()">Start</button>
 
     <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
     <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
 
     <button onclick="toggleCoords()">Coords: <span id="coordsText">On</span></button>
+
+    <button onclick="toggleTimeMode()">Time: <span id="timeText">30s</span></button>
 
     <button onclick="resetBoard()">Reset</button>
 
@@ -198,6 +202,10 @@ const viewText = document.getElementById("viewText");
 
 const coordsText = document.getElementById("coordsText");
 
+const timeText = document.getElementById("timeText");
+
+const startBtn = document.getElementById("startBtn");
+
 const result = document.getElementById("result");
 
 const files = ["a","b","c","d","e","f","g","h"];
@@ -207,6 +215,8 @@ const ranks = [8,7,6,5,4,3,2,1];
 let orientation = "white";
 
 let showCoords = JSON.parse(localStorage.getItem("showCoords") ?? "true");
+
+let timeMode = "30"; // "30" or "unlimited"
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
@@ -298,15 +308,11 @@ function handleClick(coord) {
 
                 squareMap[coord].classList.remove("selected");
 
-            } else {
+            } else if (selected.length < max) {
 
-                if (selected.length < max) {
+                selected.push(coord);
 
-                    selected.push(coord);
-
-                    squareMap[coord].classList.add("selected");
-
-                }
+                squareMap[coord].classList.add("selected");
 
             }
 
@@ -340,71 +346,57 @@ function handleClick(coord) {
 
 }
 
-/* TOGGLE COORDS */
+/* TIME MODE */
 
-function toggleCoords() {
+function toggleTimeMode() {
 
-    showCoords = !showCoords;
+    timeMode = (timeMode === "30") ? "unlimited" : "30";
 
-    localStorage.setItem("showCoords", JSON.stringify(showCoords));
-
-    buildBoard();
+    timeText.textContent = (timeMode === "30") ? "30s" : "Unlimited";
 
 }
 
-/* ORIENTATION */
+/* START / STOP */
 
-function toggleOrientation() {
+function startStop() {
 
-    orientation = (orientation === "white") ? "black" : "white";
+    if (training) {
 
-    viewText.textContent = orientation === "white" ? "White" : "Black";
+        endTraining();
 
-    buildBoard();
+        return;
 
-}
-
-/* MODE */
-
-function toggleMode() {
-
-    mode = (mode === "all") ? "selected" : "all";
-
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
-
-}
-
-/* START */
-
-function startTraining() {
+    }
 
     training = true;
+
+    startBtn.textContent = "Stop";
 
     sessionCorrect = 0;
 
     sessionAttempts = 0;
 
-    timeLeft = 30;
-
     result.textContent = "";
 
-    pool = (mode === "all")
-
-        ? Object.keys(squareMap)
-
-        : [...selected];
+    pool = (mode === "all") ? Object.keys(squareMap) : [...selected];
 
     if (pool.length === 0) return;
 
     nextPrompt();
 
-    timer = setInterval(() => {
+    if (timeMode === "30") {
 
-        timeLeft--;
+        timeLeft = 30;
 
-        if (timeLeft <= 0) endTraining();
+        timer = setInterval(() => {
 
-    }, 1000);
+            timeLeft--;
+
+            if (timeLeft <= 0) endTraining();
+
+        }, 1000);
+
+    }
 
 }
 
@@ -434,11 +426,47 @@ function endTraining() {
 
     training = false;
 
+    startBtn.textContent = "Start";
+
     flash.style.display = "none";
 
     result.textContent =
 
         `Session ${sessionCorrect}/${sessionAttempts}`;
+
+}
+
+/* MODE */
+
+function toggleMode() {
+
+    mode = (mode === "all") ? "selected" : "all";
+
+    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+
+}
+
+/* ORIENTATION */
+
+function toggleOrientation() {
+
+    orientation = (orientation === "white") ? "black" : "white";
+
+    viewText.textContent = orientation === "white" ? "White" : "Black";
+
+    buildBoard();
+
+}
+
+/* COORDS */
+
+function toggleCoords() {
+
+    showCoords = !showCoords;
+
+    localStorage.setItem("showCoords", JSON.stringify(showCoords));
+
+    buildBoard();
 
 }
 
@@ -456,11 +484,7 @@ function updateStats() {
 
 function resetBoard() {
 
-    localStorage.removeItem("selected");
-
-    localStorage.removeItem("bestScore");
-
-    localStorage.removeItem("showCoords");
+    localStorage.clear();
 
     location.reload();
 
