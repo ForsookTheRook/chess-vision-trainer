@@ -156,7 +156,9 @@ button {
 
 <div class="top-controls">
 
-    <button id="startBtn" onclick="startStop()">Start</button>
+    <button onclick="startTraining()">Start</button>
+
+    <button onclick="stopTraining()">Stop</button>
 
     <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
@@ -203,8 +205,6 @@ const viewText = document.getElementById("viewText");
 const coordsText = document.getElementById("coordsText");
 
 const timeText = document.getElementById("timeText");
-
-const startBtn = document.getElementById("startBtn");
 
 const result = document.getElementById("result");
 
@@ -258,11 +258,7 @@ function buildBoard() {
 
         for (let f = 0; f < 8; f++) {
 
-            const file = fileOrder[f];
-
-            const rank = rankOrder[r];
-
-            const coord = file + rank;
+            const coord = fileOrder[f] + rankOrder[r];
 
             const square = document.createElement("div");
 
@@ -346,7 +342,7 @@ function handleClick(coord) {
 
 }
 
-/* TIME MODE */
+/* TIME TOGGLE */
 
 function toggleTimeMode() {
 
@@ -356,21 +352,13 @@ function toggleTimeMode() {
 
 }
 
-/* START / STOP */
+/* START */
 
-function startStop() {
+function startTraining() {
 
-    if (training) {
-
-        endTraining();
-
-        return;
-
-    }
+    if (training) return;
 
     training = true;
-
-    startBtn.textContent = "Stop";
 
     sessionCorrect = 0;
 
@@ -392,11 +380,27 @@ function startStop() {
 
             timeLeft--;
 
-            if (timeLeft <= 0) endTraining();
+            if (timeLeft <= 0) stopTraining();
 
         }, 1000);
 
     }
+
+}
+
+/* STOP */
+
+function stopTraining() {
+
+    clearInterval(timer);
+
+    training = false;
+
+    flash.style.display = "none";
+
+    result.textContent =
+
+        `Session ${sessionCorrect}/${sessionAttempts}`;
 
 }
 
@@ -415,24 +419,6 @@ function nextPrompt() {
         flash.style.display = "none";
 
     }, 800);
-
-}
-
-/* END */
-
-function endTraining() {
-
-    clearInterval(timer);
-
-    training = false;
-
-    startBtn.textContent = "Start";
-
-    flash.style.display = "none";
-
-    result.textContent =
-
-        `Session ${sessionCorrect}/${sessionAttempts}`;
 
 }
 
