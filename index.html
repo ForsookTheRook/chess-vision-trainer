@@ -1,4 +1,4 @@
-<!DOCTYPE <!DOCTYPE html>
+<!DOCTYPE html>
 
 <html>
 
@@ -25,8 +25,6 @@ body {
     font-family: -apple-system, sans-serif;
 
 }
-
-/* CONTROLS ABOVE BOARD */
 
 .top-controls {
 
@@ -116,7 +114,7 @@ button {
 
     right: 10%;
 
-    font-size: 56px;   /* ~30% larger than 42px */
+    font-size: 56px;
 
     font-weight: 300;
 
@@ -148,8 +146,6 @@ button {
 
 <body>
 
-<!-- MODE + START CONTROLS ABOVE BOARD -->
-
 <div class="top-controls">
 
     <button onclick="startTraining()">Start 30s</button>
@@ -166,7 +162,7 @@ button {
 
     <div id="stats">
 
-        Session [0/0] | All Time [0/0]
+        Session [0/0] | Best [0]
 
     </div>
 
@@ -194,9 +190,7 @@ const ranks = [8,7,6,5,4,3,2,1];
 
 let selected = JSON.parse(localStorage.getItem("selected") || "[]");
 
-let allCorrect = parseInt(localStorage.getItem("allCorrect") || "0");
-
-let allAttempts = parseInt(localStorage.getItem("allAttempts") || "0");
+let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
 
 let sessionCorrect = 0;
 
@@ -288,17 +282,21 @@ function handleClick(coord) {
 
     sessionAttempts++;
 
-    allAttempts++;
-
     if (coord === currentTarget) {
 
         sessionCorrect++;
 
-        allCorrect++;
+        // IMMEDIATE BEST UPDATE
+
+        if (sessionCorrect > bestScore) {
+
+            bestScore = sessionCorrect;
+
+            localStorage.setItem("bestScore", bestScore);
+
+        }
 
     }
-
-    saveStats();
 
     updateStats();
 
@@ -390,15 +388,7 @@ function updateStats() {
 
     stats.textContent =
 
-        `Session [${sessionCorrect}/${sessionAttempts}] | All Time [${allCorrect}/${allAttempts}]`;
-
-}
-
-function saveStats() {
-
-    localStorage.setItem("allCorrect", allCorrect);
-
-    localStorage.setItem("allAttempts", allAttempts);
+        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
 
 }
 
@@ -407,6 +397,8 @@ function saveStats() {
 function resetBoard() {
 
     localStorage.removeItem("selected");
+
+    localStorage.removeItem("bestScore");
 
     location.reload();
 
