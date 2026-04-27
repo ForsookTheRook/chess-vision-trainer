@@ -1,110 +1,112 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
 
-<title>Chess Vision Trainer</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+<title>64 Square Vision Board</title>
 
 <style>
 
-body {
+  body {
 
-    margin:0;
+    font-family: system-ui, -apple-system, sans-serif;
 
-    background:#111;
+    display: flex;
 
-    display:flex;
+    flex-direction: column;
 
-    flex-direction:column;
+    align-items: center;
 
-    align-items:center;
+    margin: 20px;
 
-    font-family: -apple-system, sans-serif;
+    font-size: 1.3em; /* ~30% increase */
 
-}
+  }
 
-/* TOP CONTROLS */
+  #controls {
 
-.top-controls {
+    margin-bottom: 10px;
 
-    margin-top:15px;
+    display: flex;
 
-    color:white;
+    gap: 10px;
 
-    font-size:14px;
+    align-items: center;
 
-    display:flex;
+  }
 
-    gap:10px;
+  button {
 
-    align-items:center;
+    padding: 8px 12px;
 
-}
+    font-size: 1em;
 
-button {
+    cursor: pointer;
 
-    padding:6px 10px;
+  }
 
-    border-radius:6px;
+  #score {
 
-    border:none;
+    margin: 10px 0;
 
-    background:#2c2c2e;
+  }
 
-    color:white;
+  #board {
 
-}
+    display: grid;
 
-/* BOARD */
+    grid-template-columns: repeat(8, 60px);
 
-.board {
+    grid-template-rows: repeat(8, 60px);
 
-    display:grid;
+    position: relative;
 
-    grid-template-columns: repeat(8, 40px);
+    border: 2px solid #333;
 
-    grid-template-rows: repeat(8, 40px);
+  }
 
-    margin-top:15px;
+  .square {
 
-}
+    width: 60px;
 
-.square {
+    height: 60px;
 
-    width:40px;
+    display: flex;
 
-    height:40px;
+    align-items: center;
 
-    display:flex;
+    justify-content: center;
 
-    justify-content:center;
+    user-select: none;
 
-    align-items:center;
+  }
 
-    font-size:10px;
+  .light { background: #eee; }
 
-    user-select:none;
+  .dark { background: #777; }
 
-}
+  /* Suggested square overlay (centered) */
 
-.light { background:#f0d9b5; }
+  .suggested-square {
 
-.dark { background:#b58863; }
+    position: absolute;
 
-.selected {
+    width: 40px;
 
-    box-shadow: inset 0 0 0 3px #00e5ff;
+    height: 40px;
 
-}
+    border: 2px solid red;
 
-/* CENTER FLASH (UPDATED) */
+    box-sizing: border-box;
 
-.flash {
+    pointer-events: none;
 
-    position: fixed;
+    /* centered on board */
 
     top: 50%;
 
@@ -112,41 +114,15 @@ button {
 
     transform: translate(-50%, -50%);
 
-    font-size: 56px;
+    opacity: 0.85;
 
-    font-weight: 300;
+  }
 
-    letter-spacing: 2px;
+  .hit {
 
-    color: #00ffcc;
+    outline: 3px solid green;
 
-    text-shadow: 0 0 10px black;
-
-    display: none;
-
-    z-index: 999;
-
-    opacity: 0.95;
-
-}
-
-.result {
-
-    margin-top:10px;
-
-    color:white;
-
-}
-
-#stats {
-
-    margin-top:10px;
-
-    color:white;
-
-    font-size:13px;
-
-}
+  }
 
 </style>
 
@@ -154,269 +130,117 @@ button {
 
 <body>
 
-<!-- CONTROLS ABOVE BOARD -->
+<div id="controls">
 
-<div class="top-controls">
+  <label>
 
-    <button onclick="startTraining()">Start 30s</button>
+    Mode:
 
-    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
+    <select id="mode">
 
-    <button onclick="resetBoard()">Reset</button>
+      <option value="practice">Practice</option>
+
+      <option value="timed">Timed</option>
+
+    </select>
+
+  </label>
+
+  <button onclick="reset()">Reset</button>
 
 </div>
 
-<div class="board" id="board"></div>
+<div id="score">
 
-<div id="stats">
+  Attempts: <span id="attempts">0</span> |
 
-    Session [0/0] | All Time [0/0]
+  Correct: <span id="correct">0</span>
 
 </div>
 
-<div class="result" id="result"></div>
-
-<!-- CENTERED FLASH -->
-
-<div class="flash" id="flash"></div>
+<div id="board"></div>
 
 <script>
 
 const board = document.getElementById("board");
 
-const flash = document.getElementById("flash");
+const attemptsEl = document.getElementById("attempts");
 
-const stats = document.getElementById("stats");
+const correctEl = document.getElementById("correct");
 
-const modeText = document.getElementById("modeText");
+let attempts = 0;
 
-const result = document.getElementById("result");
+let correct = 0;
 
-const files = ["a","b","c","d","e","f","g","h"];
+// Build board
 
-const ranks = [8,7,6,5,4,3,2,1];
-
-let selected = JSON.parse(localStorage.getItem("selected") || "[]");
-
-let allCorrect = parseInt(localStorage.getItem("allCorrect") || "0");
-
-let allAttempts = parseInt(localStorage.getItem("allAttempts") || "0");
-
-let sessionCorrect = 0;
-
-let sessionAttempts = 0;
-
-const max = 16;
-
-let training = false;
-
-let pool = [];
-
-let currentTarget = null;
-
-let timer = null;
-
-let timeLeft = 30;
-
-let mode = "all";
-
-const squareMap = {};
-
-/* BUILD BOARD */
+const squares = [];
 
 for (let r = 0; r < 8; r++) {
 
-    for (let f = 0; f < 8; f++) {
+  for (let c = 0; c < 8; c++) {
 
-        const square = document.createElement("div");
+    const sq = document.createElement("div");
 
-        const coord = files[f] + ranks[r];
+    sq.className = "square " + ((r + c) % 2 === 0 ? "light" : "dark");
 
-        square.className = "square";
+    sq.dataset.r = r;
 
-        if ((r + f) % 2 === 0) square.classList.add("light");
+    sq.dataset.c = c;
 
-        else square.classList.add("dark");
+    sq.addEventListener("click", () => handleClick(r, c, sq));
 
-        square.textContent = coord;
+    board.appendChild(sq);
 
-        squareMap[coord] = square;
+    squares.push(sq);
 
-        if (selected.includes(coord)) {
-
-            square.classList.add("selected");
-
-        }
-
-        square.addEventListener("click", () => handleClick(coord));
-
-        board.appendChild(square);
-
-    }
+  }
 
 }
 
-/* CLICK */
+// Suggested square (fixed center)
 
-function handleClick(coord) {
+const suggested = document.createElement("div");
 
-    if (!training) {
+suggested.className = "suggested-square";
 
-        if (mode === "selected") {
+board.appendChild(suggested);
 
-            if (selected.includes(coord)) {
+const center = { r: 3, c: 3 };
 
-                selected = selected.filter(s => s !== coord);
+function handleClick(r, c, el) {
 
-                squareMap[coord].classList.remove("selected");
+  attempts++;
 
-            } else {
+  attemptsEl.textContent = attempts;
 
-                if (selected.length < max) {
+  const isCorrect = (r === center.r && c === center.c);
 
-                    selected.push(coord);
+  if (isCorrect) {
 
-                    squareMap[coord].classList.add("selected");
+    correct++;
 
-                }
+    correctEl.textContent = correct;
 
-            }
+    el.classList.add("hit");
 
-            localStorage.setItem("selected", JSON.stringify(selected));
+    setTimeout(() => el.classList.remove("hit"), 400);
 
-        }
-
-        return;
-
-    }
-
-    sessionAttempts++;
-
-    allAttempts++;
-
-    if (coord === currentTarget) {
-
-        sessionCorrect++;
-
-        allCorrect++;
-
-    }
-
-    saveStats();
-
-    updateStats();
-
-    nextPrompt();
+  }
 
 }
 
-/* MODE */
+function reset() {
 
-function toggleMode() {
+  attempts = 0;
 
-    mode = (mode === "all") ? "selected" : "all";
+  correct = 0;
 
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+  attemptsEl.textContent = "0";
 
-}
-
-/* START */
-
-function startTraining() {
-
-    training = true;
-
-    sessionCorrect = 0;
-
-    sessionAttempts = 0;
-
-    timeLeft = 30;
-
-    result.textContent = "";
-
-    pool = (mode === "all")
-
-        ? Object.keys(squareMap)
-
-        : [...selected];
-
-    if (pool.length === 0) return;
-
-    nextPrompt();
-
-    timer = setInterval(() => {
-
-        timeLeft--;
-
-        if (timeLeft <= 0) endTraining();
-
-    }, 1000);
+  correctEl.textContent = "0";
 
 }
-
-/* PROMPT */
-
-function nextPrompt() {
-
-    currentTarget = pool[Math.floor(Math.random() * pool.length)];
-
-    flash.textContent = currentTarget;
-
-    flash.style.display = "block";
-
-    setTimeout(() => {
-
-        flash.style.display = "none";
-
-    }, 800);
-
-}
-
-/* END */
-
-function endTraining() {
-
-    clearInterval(timer);
-
-    training = false;
-
-    flash.style.display = "none";
-
-    result.textContent =
-
-        `Session ${sessionCorrect}/${sessionAttempts}`;
-
-}
-
-/* STATS */
-
-function updateStats() {
-
-    stats.textContent =
-
-        `Session [${sessionCorrect}/${sessionAttempts}] | All Time [${allCorrect}/${allAttempts}]`;
-
-}
-
-function saveStats() {
-
-    localStorage.setItem("allCorrect", allCorrect);
-
-    localStorage.setItem("allAttempts", allAttempts);
-
-}
-
-/* RESET */
-
-function resetBoard() {
-
-    localStorage.removeItem("selected");
-
-    location.reload();
-
-}
-
-updateStats();
 
 </script>
 
