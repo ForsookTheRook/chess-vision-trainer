@@ -6,163 +6,161 @@
 
 <meta charset="UTF-8">
 
-<title>Chess Trainer</title>
+<title>Chess Vision Trainer</title>
 
 <style>
 
-  body {
+body {
 
-    display: flex;
+  display: flex;
 
-    flex-direction: column;
+  flex-direction: column;
 
-    align-items: center;
+  align-items: center;
 
-    font-family: Arial, sans-serif;
+  font-family: Arial, sans-serif;
 
-  }
+}
 
-  #controls {
+#controls {
 
-    margin-bottom: 10px;
+  display: flex;
 
-    display: flex;
+  gap: 10px;
 
-    gap: 10px;
+  margin-bottom: 10px;
 
-  }
+}
 
-  button {
+#stats {
 
-    padding: 6px 12px;
+  margin-bottom: 10px;
 
-    font-size: 14px;
+  font-size: 16px;
 
-    cursor: pointer;
+}
 
-  }
+#target {
 
-  #board {
+  margin-bottom: 10px;
 
-    display: grid;
+  font-size: 22px;
 
-    grid-template-columns: repeat(8, 60px);
+  font-weight: bold;
 
-    grid-template-rows: repeat(8, 60px);
+}
 
-  }
+#board {
 
-  .square {
+  display: grid;
 
-    width: 60px;
+  grid-template-columns: repeat(8, 60px);
 
-    height: 60px;
+  grid-template-rows: repeat(8, 60px);
 
-    position: relative;
+}
 
-  }
+.square {
 
-  .light { background: #f0d9b5; }
+  width: 60px;
 
-  .dark  { background: #b58863; }
+  height: 60px;
 
-  /* Target marker */
+  position: relative;
 
-  .target::after {
+}
 
-    content: "";
+.light { background: #f0d9b5; }
 
-    position: absolute;
+.dark  { background: #b58863; }
 
-    width: 18px;
+.target::after {
 
-    height: 18px;
+  content: "";
 
-    border: 2px solid red;
+  position: absolute;
 
-    border-radius: 4px;
+  width: 18px;
 
-    top: 50%;
+  height: 18px;
 
-    left: 50%;
+  border: 2px solid red;
 
-    transform: translate(-50%, -50%);
+  border-radius: 4px;
 
-  }
+  top: 50%;
 
-  /* Feedback icons */
+  left: 50%;
 
-  .correct::after {
+  transform: translate(-50%, -50%);
 
-    content: "✔";
+}
 
-    color: green;
+.correct::after {
 
-    font-size: 28px;
+  content: "✔";
 
-    position: absolute;
+  color: green;
 
-    top: 50%;
+  font-size: 28px;
 
-    left: 50%;
+  position: absolute;
 
-    transform: translate(-50%, -50%);
+  top: 50%;
 
-  }
+  left: 50%;
 
-  .incorrect::after {
+  transform: translate(-50%, -50%);
 
-    content: "✖";
+}
 
-    color: red;
+.incorrect::after {
 
-    font-size: 28px;
+  content: "✖";
 
-    position: absolute;
+  color: red;
 
-    top: 50%;
+  font-size: 28px;
 
-    left: 50%;
+  position: absolute;
 
-    transform: translate(-50%, -50%);
+  top: 50%;
 
-  }
+  left: 50%;
 
-  /* Coordinates */
+  transform: translate(-50%, -50%);
 
-  .coord-file {
+}
 
-    position: absolute;
+.coord-file {
 
-    bottom: 2px;
+  position: absolute;
 
-    right: 4px;
+  bottom: 2px;
 
-    font-size: 10px;
+  right: 4px;
 
-    opacity: 0.75;
+  font-size: 10px;
 
-  }
+  opacity: 0.75;
 
-  .coord-rank {
+}
 
-    position: absolute;
+.coord-rank {
 
-    top: 2px;
+  position: absolute;
 
-    left: 4px;
+  top: 2px;
 
-    font-size: 10px;
+  left: 4px;
 
-    opacity: 0.75;
+  font-size: 10px;
 
-  }
+  opacity: 0.75;
 
-  .hidden {
+}
 
-    display: none;
-
-  }
+.hidden { display: none; }
 
 </style>
 
@@ -172,11 +170,25 @@
 
 <div id="controls">
 
-  <button id="coordsBtn" onclick="toggleCoords()">Show Coordinates</button>
+  <button onclick="toggleCoords()" id="coordsBtn">Show Coordinates</button>
 
-  <button id="sideBtn" onclick="toggleSide()">Play as Black</button>
+  <button onclick="toggleSide()" id="sideBtn">Play as Black</button>
+
+  <button onclick="toggleMode()" id="modeBtn">30 Sec Mode</button>
 
 </div>
+
+<div id="stats">
+
+  Correct: <span id="correct">0</span> |
+
+  Attempts: <span id="attempts">0</span> |
+
+  Best: <span id="best">0</span>
+
+</div>
+
+<div id="target"></div>
 
 <div id="board"></div>
 
@@ -188,11 +200,19 @@ let showCoords = false;
 
 let playAsBlack = false;
 
-let targetSquare = null;
+let timedMode = true;
+
+let correct = 0;
+
+let attempts = 0;
+
+let best = 0;
+
+let timer = null;
+
+let timeLeft = 30;
 
 let locked = false;
-
-// Base coordinates
 
 const filesWhite = ["a","b","c","d","e","f","g","h"];
 
@@ -210,6 +230,8 @@ function getRanks() {
 
 }
 
+let targetSquare = null;
+
 function getRandomSquare() {
 
   return {
@@ -219,6 +241,66 @@ function getRandomSquare() {
     r: Math.floor(Math.random() * 8)
 
   };
+
+}
+
+function squareName(sq) {
+
+  return filesWhite[sq.f] + ranksWhite[sq.r];
+
+}
+
+function updateStats() {
+
+  document.getElementById("correct").textContent = correct;
+
+  document.getElementById("attempts").textContent = attempts;
+
+  document.getElementById("best").textContent = best;
+
+}
+
+function updateTarget() {
+
+  document.getElementById("target").textContent =
+
+    "Find: " + squareName(targetSquare);
+
+}
+
+function startTimer() {
+
+  clearInterval(timer);
+
+  timeLeft = 30;
+
+  timer = setInterval(() => {
+
+    timeLeft--;
+
+    document.getElementById("modeBtn").textContent =
+
+      `Time: ${timeLeft}s`;
+
+    if (timeLeft <= 0) {
+
+      clearInterval(timer);
+
+      best = Math.max(best, correct);
+
+      correct = 0;
+
+      attempts = 0;
+
+      updateStats();
+
+      nextRound();
+
+      startTimer();
+
+    }
+
+  }, 1000);
 
 }
 
@@ -238,8 +320,6 @@ function createBoard() {
 
       square.classList.add("square");
 
-      // Color
-
       if ((r + f) % 2 === 0) {
 
         square.classList.add("light");
@@ -250,21 +330,15 @@ function createBoard() {
 
       }
 
-      // Map visual → actual
-
       let actualF = playAsBlack ? 7 - f : f;
 
       let actualR = playAsBlack ? 7 - r : r;
 
-      // Target marker
-
-      if (targetSquare && targetSquare.f === actualF && targetSquare.r === actualR) {
+      if (targetSquare.f === actualF && targetSquare.r === actualR) {
 
         square.classList.add("target");
 
       }
-
-      // Click handling
 
       square.addEventListener("click", () => {
 
@@ -272,13 +346,17 @@ function createBoard() {
 
         locked = true;
 
-        const correct =
+        attempts++;
+
+        const isCorrect =
 
           targetSquare.f === actualF &&
 
           targetSquare.r === actualR;
 
-        if (correct) {
+        if (isCorrect) {
+
+          correct++;
 
           square.classList.add("correct");
 
@@ -288,25 +366,21 @@ function createBoard() {
 
         }
 
-        // Show result briefly then next
+        updateStats();
 
         setTimeout(() => {
 
-          targetSquare = getRandomSquare();
-
           locked = false;
 
-          createBoard();
+          nextRound();
 
-        }, 600);
+        }, 500);
 
       });
 
       const file = files[f];
 
       const rank = ranks[r];
-
-      // File labels
 
       if (r === 7) {
 
@@ -321,8 +395,6 @@ function createBoard() {
         square.appendChild(fileLabel);
 
       }
-
-      // Rank labels
 
       if (f === 0) {
 
@@ -343,6 +415,16 @@ function createBoard() {
     }
 
   }
+
+}
+
+function nextRound() {
+
+  targetSquare = getRandomSquare();
+
+  updateTarget();
+
+  createBoard();
 
 }
 
@@ -370,11 +452,31 @@ function toggleSide() {
 
 }
 
-// Initialize
+function toggleMode() {
 
-targetSquare = getRandomSquare();
+  timedMode = !timedMode;
 
-createBoard();
+  if (timedMode) {
+
+    startTimer();
+
+  } else {
+
+    clearInterval(timer);
+
+    document.getElementById("modeBtn").textContent = "Unlimited Mode";
+
+  }
+
+}
+
+// Init
+
+nextRound();
+
+updateStats();
+
+startTimer();
 
 </script>
 
