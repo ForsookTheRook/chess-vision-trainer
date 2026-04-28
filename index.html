@@ -1,150 +1,238 @@
 <!DOCTYPE html>
 
-<html>
+<html lang="en">
 
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
 
 <title>Chess Vision Trainer</title>
 
 <style>
 
-body {
+:root {
 
-    margin:0;
+  --bg: #0f172a;
 
-    background:#111;
+  --panel: #111827;
 
-    display:flex;
+  --accent: #22c55e;
 
-    flex-direction:column;
+  --accent-red: #ef4444;
 
-    align-items:center;
+  --text: #e5e7eb;
 
-    font-family: -apple-system, sans-serif;
+  --muted: #9ca3af;
+
+  --border: #1f2937;
 
 }
 
-.top-controls {
+body {
 
-    margin-top:15px;
+  background: linear-gradient(180deg, #020617, #0f172a);
 
-    color:white;
+  color: var(--text);
 
-    font-size:14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
-    display:flex;
+  margin: 0;
 
-    gap:10px;
+  padding: 20px;
 
-    align-items:center;
+  text-align: center;
 
-    flex-wrap: wrap;
+}
+
+.app-container {
+
+  max-width: 520px;
+
+  margin: auto;
+
+  background: var(--panel);
+
+  border-radius: 16px;
+
+  padding: 20px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+  border: 1px solid var(--border);
+
+}
+
+.title {
+
+  margin: 0;
+
+  font-size: 24px;
+
+}
+
+.subtitle {
+
+  margin: 4px 0 16px;
+
+  color: var(--muted);
+
+  font-size: 14px;
+
+}
+
+.controls {
+
+  margin-bottom: 10px;
 
 }
 
 button {
 
-    padding:6px 10px;
+  background: #1f2937;
 
-    border-radius:6px;
+  color: var(--text);
 
-    border:none;
+  border: 1px solid var(--border);
 
-    background:#2c2c2e;
+  padding: 10px 14px;
 
-    color:white;
+  margin: 6px;
+
+  border-radius: 8px;
+
+  cursor: pointer;
+
+  font-weight: 500;
+
+  transition: all 0.15s ease;
+
+}
+
+button:hover {
+
+  background: #374151;
+
+}
+
+button.active {
+
+  background: var(--accent);
+
+  color: #022c22;
+
+}
+
+.mode-pill {
+
+  display: inline-block;
+
+  padding: 6px 12px;
+
+  border-radius: 999px;
+
+  background: #020617;
+
+  border: 1px solid var(--border);
+
+  font-size: 13px;
+
+  margin-bottom: 10px;
 
 }
 
 .board {
 
-    display:grid;
+  display: grid;
 
-    grid-template-columns: repeat(8, 40px);
+  grid-template-columns: repeat(8, 1fr);
 
-    grid-template-rows: repeat(8, 40px);
+  width: 100%;
 
-    margin-top:15px;
+  aspect-ratio: 1;
 
-    position: relative;
+  border-radius: 10px;
+
+  overflow: hidden;
+
+  margin: 10px 0;
 
 }
 
 .square {
 
-    width:40px;
+  display: flex;
 
-    height:40px;
+  align-items: center;
 
-    display:flex;
+  justify-content: center;
 
-    justify-content:center;
+  font-size: 18px;
 
-    align-items:center;
+  cursor: pointer;
 
-    font-size:10px;
-
-    user-select:none;
+  transition: all 0.15s ease;
 
 }
 
-.light { background:#f0d9b5; }
+.square:hover {
 
-.dark { background:#b58863; }
+  transform: scale(1.05);
 
-.selected {
-
-    box-shadow: inset 0 0 0 3px #00e5ff;
+  z-index: 2;
 
 }
 
-.controls-bottom {
+.square.clicked {
 
-    margin-top:15px;
-
-    color:white;
-
-    font-size:14px;
+  animation: clickFlash 0.2s ease;
 
 }
 
-.flash {
+@keyframes clickFlash {
 
-    position: absolute;
+  0% { filter: brightness(1.5); }
 
-    top: 50%;
-
-    left: 50%;
-
-    transform: translate(-50%, -50%);
-
-    font-size: 56px;
-
-    font-weight: 300;
-
-    letter-spacing: 2px;
-
-    color: #00ffcc;
-
-    text-shadow: 0 0 10px black;
-
-    display: none;
-
-    z-index: 999;
-
-    opacity: 0.9;
-
-    pointer-events: none;
+  100% { filter: brightness(1); }
 
 }
 
-.result {
+.light { background: #f0d9b5; }
 
-    margin-top:10px;
+.dark { background: #b58863; }
 
-    color:white;
+.feedback {
+
+  font-size: 28px;
+
+  margin: 12px 0;
+
+  min-height: 32px;
+
+  font-weight: 600;
+
+}
+
+.correct { color: var(--accent); }
+
+.incorrect { color: var(--accent-red); }
+
+.score {
+
+  display: flex;
+
+  justify-content: space-between;
+
+  background: #020617;
+
+  padding: 10px;
+
+  border-radius: 8px;
+
+  margin-top: 12px;
+
+  border: 1px solid var(--border);
+
+  font-size: 14px;
 
 }
 
@@ -154,383 +242,193 @@ button {
 
 <body>
 
-<div class="top-controls">
+<div class="app-container">
 
-    <button onclick="startTraining()">Start</button>
+  <h1 class="title">Chess Vision Trainer</h1>
 
-    <button onclick="stopTraining()">Stop</button>
+  <p class="subtitle">Board awareness & square recognition</p>
 
-    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
+  <div class="controls">
 
-    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
+    <button id="mode4">4 Squares</button>
 
-    <button onclick="toggleCoords()">Coords: <span id="coordsText">On</span></button>
+    <button id="mode64" class="active">64 Squares</button>
 
-    <button onclick="toggleTimeMode()">Time: <span id="timeText">30s</span></button>
+  </div>
 
-    <button onclick="resetBoard()">Reset</button>
+  <div class="mode-pill" id="modeLabel">Mode: 64 Squares</div>
 
-</div>
+  <div class="board" id="board"></div>
 
-<div class="board" id="board">
+  <div class="feedback" id="feedback"></div>
 
-    <div class="flash" id="flash"></div>
+  <div class="score">
 
-</div>
+    <div>Correct: <span id="correct">0</span></div>
 
-<div class="controls-bottom">
+    <div>Attempts: <span id="attempts">0</span></div>
 
-    <div id="stats">
+  </div>
 
-        Session [0/0] | Best [0]
-
-    </div>
+  <button id="nextBtn">Next Square</button>
 
 </div>
-
-<div class="result" id="result"></div>
 
 <script>
 
 const board = document.getElementById("board");
 
-const flash = document.getElementById("flash");
+const feedback = document.getElementById("feedback");
 
-const stats = document.getElementById("stats");
+const correctEl = document.getElementById("correct");
 
-const modeText = document.getElementById("modeText");
+const attemptsEl = document.getElementById("attempts");
 
-const viewText = document.getElementById("viewText");
+const modeLabel = document.getElementById("modeLabel");
 
-const coordsText = document.getElementById("coordsText");
+let targetSquare = "";
 
-const timeText = document.getElementById("timeText");
+let correct = 0;
 
-const result = document.getElementById("result");
+let attempts = 0;
 
-const files = ["a","b","c","d","e","f","g","h"];
+let mode = 64;
 
-const ranks = [8,7,6,5,4,3,2,1];
+function createBoard() {
 
-let orientation = "white";
+  board.innerHTML = "";
 
-let showCoords = JSON.parse(localStorage.getItem("showCoords") ?? "true");
+  const files = "abcdefgh";
 
-let timeMode = "30";
+  for (let r = 8; r >= 1; r--) {
 
-let selected = JSON.parse(localStorage.getItem("selected") || "[]");
+    for (let f = 0; f < 8; f++) {
 
-let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
+      const square = document.createElement("div");
 
-let sessionCorrect = 0;
+      square.classList.add("square");
 
-let sessionAttempts = 0;
+      square.classList.add((r + f) % 2 === 0 ? "light" : "dark");
 
-const max = 16;
+      const name = files[f] + r;
 
-let training = false;
+      square.dataset.square = name;
 
-let pool = [];
+      square.addEventListener("click", () => handleClick(square));
 
-let currentTarget = null;
-
-let timer = null;
-
-let timeLeft = 30;
-
-let mode = "all";
-
-let squareMap = {};
-
-/* BUILD BOARD */
-
-function buildBoard() {
-
-    board.querySelectorAll(".square").forEach(s => s.remove());
-
-    squareMap = {};
-
-    const fileOrder = (orientation === "white") ? files : [...files].reverse();
-
-    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
-
-    for (let r = 0; r < 8; r++) {
-
-        for (let f = 0; f < 8; f++) {
-
-            const coord = fileOrder[f] + rankOrder[r];
-
-            const square = document.createElement("div");
-
-            square.className = "square";
-
-            if ((r + f) % 2 === 0) square.classList.add("light");
-
-            else square.classList.add("dark");
-
-            square.textContent = showCoords ? coord : "";
-
-            squareMap[coord] = square;
-
-            if (mode === "selected" && selected.includes(coord)) {
-
-                square.classList.add("selected");
-
-            }
-
-            square.addEventListener("click", () => handleClick(coord));
-
-            board.appendChild(square);
-
-        }
+      board.appendChild(square);
 
     }
 
-    coordsText.textContent = showCoords ? "On" : "Off";
+  }
 
 }
 
-/* SQUARE FEEDBACK */
+function getRandomSquare() {
 
-function showSquareFeedback(coord, isCorrect) {
+  const files = "abcdefgh";
 
-    const square = squareMap[coord];
+  if (mode === 64) {
 
-    const originalText = showCoords ? coord : "";
+    return files[Math.floor(Math.random() * 8)] + (Math.floor(Math.random() * 8) + 1);
 
-    square.textContent = isCorrect ? "✓" : "✗";
+  } else {
 
-    square.style.fontSize = "20px";
+    const choices = ["d4","d5","e4","e5"];
 
-    square.style.fontWeight = "bold";
+    return choices[Math.floor(Math.random() * 4)];
 
-    square.style.color = isCorrect ? "#00ff66" : "#ff3b30";
-
-    setTimeout(() => {
-
-        square.textContent = originalText;
-
-        square.style.fontSize = "10px";
-
-        square.style.fontWeight = "normal";
-
-        square.style.color = "";
-
-    }, 500);
+  }
 
 }
 
-/* CLICK */
+function nextSquare() {
 
-function handleClick(coord) {
+  targetSquare = getRandomSquare();
 
-    if (!training) {
+  feedback.textContent = targetSquare;
 
-        if (mode === "selected") {
-
-            if (selected.includes(coord)) {
-
-                selected = selected.filter(s => s !== coord);
-
-                squareMap[coord].classList.remove("selected");
-
-            } else if (selected.length < max) {
-
-                selected.push(coord);
-
-                squareMap[coord].classList.add("selected");
-
-            }
-
-            localStorage.setItem("selected", JSON.stringify(selected));
-
-        }
-
-        return;
-
-    }
-
-    sessionAttempts++;
-
-    const correct = coord === currentTarget;
-
-    if (correct) {
-
-        sessionCorrect++;
-
-        if (sessionCorrect > bestScore) {
-
-            bestScore = sessionCorrect;
-
-            localStorage.setItem("bestScore", bestScore);
-
-        }
-
-    }
-
-    showSquareFeedback(coord, correct);
-
-    updateStats();
-
-    nextPrompt();
+  feedback.className = "feedback";
 
 }
 
-/* MODE TOGGLE (FIXED) */
+function handleClick(square) {
 
-function toggleMode() {
+  attempts++;
 
-    mode = (mode === "all") ? "selected" : "all";
+  attemptsEl.textContent = attempts;
 
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+  square.classList.add("clicked");
 
-    if (mode === "all") {
+  setTimeout(() => square.classList.remove("clicked"), 200);
 
-        Object.values(squareMap).forEach(s => s.classList.remove("selected"));
+  if (square.dataset.square === targetSquare) {
 
-    } else {
+    correct++;
 
-        selected.forEach(coord => {
+    correctEl.textContent = correct;
 
-            if (squareMap[coord]) {
+    feedback.textContent = "✔ Correct";
 
-                squareMap[coord].classList.add("selected");
+    feedback.className = "feedback correct";
 
-            }
+  } else {
 
-        });
+    feedback.textContent = "✖ Incorrect";
 
-    }
+    feedback.className = "feedback incorrect";
 
-}
-
-/* TIME MODE */
-
-function toggleTimeMode() {
-
-    timeMode = (timeMode === "30") ? "unlimited" : "30";
-
-    timeText.textContent = (timeMode === "30") ? "30s" : "Unlimited";
+  }
 
 }
 
-/* START */
+function setMode(newMode) {
 
-function startTraining() {
+  mode = newMode;
 
-    if (training) return;
+  document.getElementById("mode4").classList.remove("active");
 
-    training = true;
+  document.getElementById("mode64").classList.remove("active");
 
-    sessionCorrect = 0;
+  if (mode === 4) {
 
-    sessionAttempts = 0;
+    document.getElementById("mode4").classList.add("active");
 
-    result.textContent = "";
+    modeLabel.textContent = "Mode: 4 Squares";
 
-    pool = (mode === "all") ? Object.keys(squareMap) : [...selected];
+  } else {
 
-    if (pool.length === 0) return;
+    document.getElementById("mode64").classList.add("active");
 
-    nextPrompt();
+    modeLabel.textContent = "Mode: 64 Squares";
 
-    if (timeMode === "30") {
+  }
 
-        timeLeft = 30;
+  // reset session on mode change
 
-        timer = setInterval(() => {
+  correct = 0;
 
-            timeLeft--;
+  attempts = 0;
 
-            if (timeLeft <= 0) stopTraining();
+  correctEl.textContent = 0;
 
-        }, 1000);
+  attemptsEl.textContent = 0;
 
-    }
+  feedback.textContent = "";
 
-}
-
-/* STOP */
-
-function stopTraining() {
-
-    clearInterval(timer);
-
-    training = false;
-
-    flash.style.display = "none";
-
-    result.textContent =
-
-        `Session ${sessionCorrect}/${sessionAttempts}`;
+  nextSquare();
 
 }
 
-/* PROMPT */
+document.getElementById("nextBtn").onclick = nextSquare;
 
-function nextPrompt() {
+document.getElementById("mode4").onclick = () => setMode(4);
 
-    currentTarget = pool[Math.floor(Math.random() * pool.length)];
+document.getElementById("mode64").onclick = () => setMode(64);
 
-    flash.textContent = currentTarget;
+createBoard();
 
-    flash.style.display = "block";
-
-    setTimeout(() => {
-
-        flash.style.display = "none";
-
-    }, 800);
-
-}
-
-/* ORIENTATION */
-
-function toggleOrientation() {
-
-    orientation = (orientation === "white") ? "black" : "white";
-
-    viewText.textContent = orientation === "white" ? "White" : "Black";
-
-    buildBoard();
-
-}
-
-/* COORDS */
-
-function toggleCoords() {
-
-    showCoords = !showCoords;
-
-    localStorage.setItem("showCoords", JSON.stringify(showCoords));
-
-    buildBoard();
-
-}
-
-/* STATS */
-
-function updateStats() {
-
-    stats.textContent =
-
-        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
-
-}
-
-/* RESET */
-
-function resetBoard() {
-
-    localStorage.clear();
-
-    location.reload();
-
-}
-
-buildBoard();
-
-updateStats();
+nextSquare();
 
 </script>
 
