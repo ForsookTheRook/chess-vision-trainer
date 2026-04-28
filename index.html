@@ -272,7 +272,7 @@ function buildBoard() {
 
             squareMap[coord] = square;
 
-            if (selected.includes(coord)) {
+            if (mode === "selected" && selected.includes(coord)) {
 
                 square.classList.add("selected");
 
@@ -290,7 +290,7 @@ function buildBoard() {
 
 }
 
-/* SQUARE FEEDBACK (ONLY FEEDBACK SYSTEM) */
+/* SQUARE FEEDBACK */
 
 function showSquareFeedback(coord, isCorrect) {
 
@@ -376,6 +376,34 @@ function handleClick(coord) {
 
 }
 
+/* MODE TOGGLE (FIXED) */
+
+function toggleMode() {
+
+    mode = (mode === "all") ? "selected" : "all";
+
+    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+
+    if (mode === "all") {
+
+        Object.values(squareMap).forEach(s => s.classList.remove("selected"));
+
+    } else {
+
+        selected.forEach(coord => {
+
+            if (squareMap[coord]) {
+
+                squareMap[coord].classList.add("selected");
+
+            }
+
+        });
+
+    }
+
+}
+
 /* TIME MODE */
 
 function toggleTimeMode() {
@@ -453,16 +481,6 @@ function nextPrompt() {
         flash.style.display = "none";
 
     }, 800);
-
-}
-
-/* MODE */
-
-function toggleMode() {
-
-    mode = (mode === "all") ? "selected" : "all";
-
-    modeText.textContent = mode === "all" ? "All 64" : "Selected";
 
 }
 
