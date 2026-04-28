@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 
-<html lang="en">
+<html>
 
 <head>
 
-<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Chess Vision Trainer</title>
 
@@ -12,155 +12,177 @@
 
 body {
 
-  display: flex;
+    margin:0;
 
-  flex-direction: column;
+    background:#111;
 
-  align-items: center;
+    display:flex;
 
-  font-family: Arial, sans-serif;
+    flex-direction:column;
 
-}
+    align-items:center;
 
-#controls {
-
-  display: flex;
-
-  gap: 10px;
-
-  margin-bottom: 10px;
+    font-family: -apple-system, sans-serif;
 
 }
 
-#stats {
+.top-controls {
 
-  margin-bottom: 10px;
+    margin-top:15px;
 
-  font-size: 16px;
+    color:white;
+
+    font-size:14px;
+
+    display:flex;
+
+    gap:10px;
+
+    align-items:center;
+
+    flex-wrap: wrap;
 
 }
 
-#target {
+button {
 
-  margin-bottom: 10px;
+    padding:6px 10px;
 
-  font-size: 22px;
+    border-radius:6px;
 
-  font-weight: bold;
+    border:none;
+
+    background:#2c2c2e;
+
+    color:white;
 
 }
 
-#board {
+.board {
 
-  display: grid;
+    display:grid;
 
-  grid-template-columns: repeat(8, 60px);
+    grid-template-columns: repeat(8, 40px);
 
-  grid-template-rows: repeat(8, 60px);
+    grid-template-rows: repeat(8, 40px);
+
+    margin-top:15px;
+
+    position: relative;
 
 }
 
 .square {
 
-  width: 60px;
+    width:40px;
 
-  height: 60px;
+    height:40px;
 
-  position: relative;
+    display:flex;
 
-}
+    justify-content:center;
 
-.light { background: #f0d9b5; }
+    align-items:center;
 
-.dark  { background: #b58863; }
+    font-size:10px;
 
-.target::after {
-
-  content: "";
-
-  position: absolute;
-
-  width: 18px;
-
-  height: 18px;
-
-  border: 2px solid red;
-
-  border-radius: 4px;
-
-  top: 50%;
-
-  left: 50%;
-
-  transform: translate(-50%, -50%);
+    user-select:none;
 
 }
 
-.correct::after {
+.light { background:#f0d9b5; }
 
-  content: "✔";
+.dark { background:#b58863; }
 
-  color: green;
+.selected {
 
-  font-size: 28px;
-
-  position: absolute;
-
-  top: 50%;
-
-  left: 50%;
-
-  transform: translate(-50%, -50%);
+    box-shadow: inset 0 0 0 3px #00e5ff;
 
 }
 
-.incorrect::after {
+.controls-bottom {
 
-  content: "✖";
+    margin-top:15px;
 
-  color: red;
+    color:white;
 
-  font-size: 28px;
-
-  position: absolute;
-
-  top: 50%;
-
-  left: 50%;
-
-  transform: translate(-50%, -50%);
+    font-size:14px;
 
 }
 
-.coord-file {
+.flash {
 
-  position: absolute;
+    position: absolute;
 
-  bottom: 2px;
+    top: 50%;
 
-  right: 4px;
+    left: 50%;
 
-  font-size: 10px;
+    transform: translate(-50%, -50%);
 
-  opacity: 0.75;
+    font-size: 56px;
+
+    font-weight: 300;
+
+    letter-spacing: 2px;
+
+    color: #00ffcc;
+
+    text-shadow: 0 0 10px black;
+
+    display: none;
+
+    z-index: 999;
+
+    opacity: 0.9;
+
+    pointer-events: none;
 
 }
 
-.coord-rank {
+/* NEW: feedback overlay */
 
-  position: absolute;
+.feedback {
 
-  top: 2px;
+    position: absolute;
 
-  left: 4px;
+    top: 50%;
 
-  font-size: 10px;
+    left: 50%;
 
-  opacity: 0.75;
+    transform: translate(-50%, -50%);
+
+    font-size: 80px;
+
+    font-weight: bold;
+
+    display: none;
+
+    z-index: 1000;
+
+    pointer-events: none;
 
 }
 
-.hidden { display: none; }
+.feedback.correct {
+
+    color: #00ff66;
+
+}
+
+.feedback.wrong {
+
+    color: #ff3b30;
+
+}
+
+.result {
+
+    margin-top:10px;
+
+    color:white;
+
+}
 
 </style>
 
@@ -168,315 +190,357 @@ body {
 
 <body>
 
-<div id="controls">
+<div class="top-controls">
 
-  <button onclick="toggleCoords()" id="coordsBtn">Show Coordinates</button>
+    <button onclick="startTraining()">Start</button>
 
-  <button onclick="toggleSide()" id="sideBtn">Play as Black</button>
+    <button onclick="stopTraining()">Stop</button>
 
-  <button onclick="toggleMode()" id="modeBtn">30 Sec Mode</button>
+    <button onclick="toggleMode()">Mode: <span id="modeText">All 64</span></button>
 
-</div>
+    <button onclick="toggleOrientation()">View: <span id="viewText">White</span></button>
 
-<div id="stats">
+    <button onclick="toggleCoords()">Coords: <span id="coordsText">On</span></button>
 
-  Correct: <span id="correct">0</span> |
+    <button onclick="toggleTimeMode()">Time: <span id="timeText">30s</span></button>
 
-  Attempts: <span id="attempts">0</span> |
-
-  Best: <span id="best">0</span>
+    <button onclick="resetBoard()">Reset</button>
 
 </div>
 
-<div id="target"></div>
+<div class="board" id="board">
 
-<div id="board"></div>
+    <div class="flash" id="flash"></div>
+
+    <div class="feedback" id="feedback"></div>
+
+</div>
+
+<div class="controls-bottom">
+
+    <div id="stats">
+
+        Session [0/0] | Best [0]
+
+    </div>
+
+</div>
+
+<div class="result" id="result"></div>
 
 <script>
 
 const board = document.getElementById("board");
 
-let showCoords = false;
+const flash = document.getElementById("flash");
 
-let playAsBlack = false;
+const feedback = document.getElementById("feedback");
 
-let timedMode = true;
+const stats = document.getElementById("stats");
 
-let correct = 0;
+const modeText = document.getElementById("modeText");
 
-let attempts = 0;
+const viewText = document.getElementById("viewText");
 
-let best = 0;
+const coordsText = document.getElementById("coordsText");
+
+const timeText = document.getElementById("timeText");
+
+const result = document.getElementById("result");
+
+const files = ["a","b","c","d","e","f","g","h"];
+
+const ranks = [8,7,6,5,4,3,2,1];
+
+let orientation = "white";
+
+let showCoords = JSON.parse(localStorage.getItem("showCoords") ?? "true");
+
+let timeMode = "30";
+
+let selected = JSON.parse(localStorage.getItem("selected") || "[]");
+
+let bestScore = parseInt(localStorage.getItem("bestScore") || "0");
+
+let sessionCorrect = 0;
+
+let sessionAttempts = 0;
+
+const max = 16;
+
+let training = false;
+
+let pool = [];
+
+let currentTarget = null;
 
 let timer = null;
 
 let timeLeft = 30;
 
-let locked = false;
+let mode = "all";
 
-const filesWhite = ["a","b","c","d","e","f","g","h"];
+let squareMap = {};
 
-const ranksWhite = [8,7,6,5,4,3,2,1];
+/* BOARD */
 
-function getFiles() {
+function buildBoard() {
 
-  return playAsBlack ? [...filesWhite].reverse() : filesWhite;
+    board.querySelectorAll(".square").forEach(s => s.remove());
 
-}
+    squareMap = {};
 
-function getRanks() {
+    const fileOrder = (orientation === "white") ? files : [...files].reverse();
 
-  return playAsBlack ? [...ranksWhite].reverse() : ranksWhite;
+    const rankOrder = (orientation === "white") ? ranks : [...ranks].reverse();
 
-}
+    for (let r = 0; r < 8; r++) {
 
-let targetSquare = null;
+        for (let f = 0; f < 8; f++) {
 
-function getRandomSquare() {
+            const coord = fileOrder[f] + rankOrder[r];
 
-  return {
+            const square = document.createElement("div");
 
-    f: Math.floor(Math.random() * 8),
+            square.className = "square";
 
-    r: Math.floor(Math.random() * 8)
+            if ((r + f) % 2 === 0) square.classList.add("light");
 
-  };
+            else square.classList.add("dark");
 
-}
+            square.textContent = showCoords ? coord : "";
 
-function squareName(sq) {
+            squareMap[coord] = square;
 
-  return filesWhite[sq.f] + ranksWhite[sq.r];
+            if (selected.includes(coord)) {
 
-}
+                square.classList.add("selected");
 
-function updateStats() {
+            }
 
-  document.getElementById("correct").textContent = correct;
+            square.addEventListener("click", () => handleClick(coord));
 
-  document.getElementById("attempts").textContent = attempts;
-
-  document.getElementById("best").textContent = best;
-
-}
-
-function updateTarget() {
-
-  document.getElementById("target").textContent =
-
-    "Find: " + squareName(targetSquare);
-
-}
-
-function startTimer() {
-
-  clearInterval(timer);
-
-  timeLeft = 30;
-
-  timer = setInterval(() => {
-
-    timeLeft--;
-
-    document.getElementById("modeBtn").textContent =
-
-      `Time: ${timeLeft}s`;
-
-    if (timeLeft <= 0) {
-
-      clearInterval(timer);
-
-      best = Math.max(best, correct);
-
-      correct = 0;
-
-      attempts = 0;
-
-      updateStats();
-
-      nextRound();
-
-      startTimer();
-
-    }
-
-  }, 1000);
-
-}
-
-function createBoard() {
-
-  board.innerHTML = "";
-
-  const files = getFiles();
-
-  const ranks = getRanks();
-
-  for (let r = 0; r < 8; r++) {
-
-    for (let f = 0; f < 8; f++) {
-
-      const square = document.createElement("div");
-
-      square.classList.add("square");
-
-      if ((r + f) % 2 === 0) {
-
-        square.classList.add("light");
-
-      } else {
-
-        square.classList.add("dark");
-
-      }
-
-      let actualF = playAsBlack ? 7 - f : f;
-
-      let actualR = playAsBlack ? 7 - r : r;
-
-      if (targetSquare.f === actualF && targetSquare.r === actualR) {
-
-        square.classList.add("target");
-
-      }
-
-      square.addEventListener("click", () => {
-
-        if (locked) return;
-
-        locked = true;
-
-        attempts++;
-
-        const isCorrect =
-
-          targetSquare.f === actualF &&
-
-          targetSquare.r === actualR;
-
-        if (isCorrect) {
-
-          correct++;
-
-          square.classList.add("correct");
-
-        } else {
-
-          square.classList.add("incorrect");
+            board.appendChild(square);
 
         }
 
-        updateStats();
+    }
 
-        setTimeout(() => {
+    coordsText.textContent = showCoords ? "On" : "Off";
 
-          locked = false;
+}
 
-          nextRound();
+/* FEEDBACK */
 
-        }, 500);
+function showFeedback(isCorrect) {
 
-      });
+    feedback.textContent = isCorrect ? "✓" : "✗";
 
-      const file = files[f];
+    feedback.className = "feedback " + (isCorrect ? "correct" : "wrong");
 
-      const rank = ranks[r];
+    feedback.style.display = "block";
 
-      if (r === 7) {
+    setTimeout(() => {
 
-        const fileLabel = document.createElement("div");
+        feedback.style.display = "none";
 
-        fileLabel.textContent = file;
+    }, 500);
 
-        fileLabel.classList.add("coord-file");
+}
 
-        if (!showCoords) fileLabel.classList.add("hidden");
+/* CLICK */
 
-        square.appendChild(fileLabel);
+function handleClick(coord) {
 
-      }
+    if (!training) {
 
-      if (f === 0) {
+        if (mode === "selected") {
 
-        const rankLabel = document.createElement("div");
+            if (selected.includes(coord)) {
 
-        rankLabel.textContent = rank;
+                selected = selected.filter(s => s !== coord);
 
-        rankLabel.classList.add("coord-rank");
+                squareMap[coord].classList.remove("selected");
 
-        if (!showCoords) rankLabel.classList.add("hidden");
+            } else if (selected.length < max) {
 
-        square.appendChild(rankLabel);
+                selected.push(coord);
 
-      }
+                squareMap[coord].classList.add("selected");
 
-      board.appendChild(square);
+            }
+
+            localStorage.setItem("selected", JSON.stringify(selected));
+
+        }
+
+        return;
 
     }
 
-  }
+    sessionAttempts++;
+
+    const correct = coord === currentTarget;
+
+    if (correct) {
+
+        sessionCorrect++;
+
+        if (sessionCorrect > bestScore) {
+
+            bestScore = sessionCorrect;
+
+            localStorage.setItem("bestScore", bestScore);
+
+        }
+
+    }
+
+    showFeedback(correct);
+
+    updateStats();
+
+    nextPrompt();
 
 }
 
-function nextRound() {
+/* TIME MODE */
 
-  targetSquare = getRandomSquare();
+function toggleTimeMode() {
 
-  updateTarget();
+    timeMode = (timeMode === "30") ? "unlimited" : "30";
 
-  createBoard();
-
-}
-
-function toggleCoords() {
-
-  showCoords = !showCoords;
-
-  document.getElementById("coordsBtn").textContent =
-
-    showCoords ? "Hide Coordinates" : "Show Coordinates";
-
-  createBoard();
+    timeText.textContent = (timeMode === "30") ? "30s" : "Unlimited";
 
 }
 
-function toggleSide() {
+/* START */
 
-  playAsBlack = !playAsBlack;
+function startTraining() {
 
-  document.getElementById("sideBtn").textContent =
+    if (training) return;
 
-    playAsBlack ? "Play as White" : "Play as Black";
+    training = true;
 
-  createBoard();
+    sessionCorrect = 0;
+
+    sessionAttempts = 0;
+
+    result.textContent = "";
+
+    pool = (mode === "all") ? Object.keys(squareMap) : [...selected];
+
+    if (pool.length === 0) return;
+
+    nextPrompt();
+
+    if (timeMode === "30") {
+
+        timeLeft = 30;
+
+        timer = setInterval(() => {
+
+            timeLeft--;
+
+            if (timeLeft <= 0) stopTraining();
+
+        }, 1000);
+
+    }
 
 }
 
-function toggleMode() {
+/* STOP */
 
-  timedMode = !timedMode;
-
-  if (timedMode) {
-
-    startTimer();
-
-  } else {
+function stopTraining() {
 
     clearInterval(timer);
 
-    document.getElementById("modeBtn").textContent = "Unlimited Mode";
+    training = false;
 
-  }
+    flash.style.display = "none";
+
+    result.textContent =
+
+        `Session ${sessionCorrect}/${sessionAttempts}`;
 
 }
 
-// Init
+/* PROMPT */
 
-nextRound();
+function nextPrompt() {
+
+    currentTarget = pool[Math.floor(Math.random() * pool.length)];
+
+    flash.textContent = currentTarget;
+
+    flash.style.display = "block";
+
+    setTimeout(() => {
+
+        flash.style.display = "none";
+
+    }, 800);
+
+}
+
+/* MODE */
+
+function toggleMode() {
+
+    mode = (mode === "all") ? "selected" : "all";
+
+    modeText.textContent = mode === "all" ? "All 64" : "Selected";
+
+}
+
+/* ORIENTATION */
+
+function toggleOrientation() {
+
+    orientation = (orientation === "white") ? "black" : "white";
+
+    viewText.textContent = orientation === "white" ? "White" : "Black";
+
+    buildBoard();
+
+}
+
+/* COORDS */
+
+function toggleCoords() {
+
+    showCoords = !showCoords;
+
+    localStorage.setItem("showCoords", JSON.stringify(showCoords));
+
+    buildBoard();
+
+}
+
+/* STATS */
+
+function updateStats() {
+
+    stats.textContent =
+
+        `Session [${sessionCorrect}/${sessionAttempts}] | Best [${bestScore}]`;
+
+}
+
+/* RESET */
+
+function resetBoard() {
+
+    localStorage.clear();
+
+    location.reload();
+
+}
+
+buildBoard();
 
 updateStats();
-
-startTimer();
 
 </script>
 
